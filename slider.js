@@ -1,22 +1,23 @@
-gsap.registerPlugin(ScrollTrigger);
+const slider = document.getElementById("slider");
+const data = JSON.parse(slider.getAttribute("data-images"));
 
-let st = ScrollTrigger.create({
-  trigger: ".main",
-  pin: ".main",
+let sliderST = ScrollTrigger.create({
+  trigger: ".home-slider",
+  pin: ".home-slider",
   start: "top 0%",
-  end: `+=${window.innerHeight * 4}`,
-  markers: true,
+  end: `+=${window.innerHeight * data.length - 1}`, //end of the last slide
+  // markers: true,
   onEnter: () => {
-    if (sketch) sketch.mountListeners();
+    // lenis.options.wheelMultiplier = 0.3;
   },
   onLeave: () => {
-    if (sketch) sketch.unMountListeners();
+    // if (sketch) sketch.unMountListeners();
   },
   onEnterBack: () => {
-    if (sketch) sketch.mountListeners();
+    // if (sketch) sketch.mountListeners();
   },
   onLeaveBack: () => {
-    if (sketch) sketch.unMountListeners();
+    console.log("on leave back");
   },
 });
 
@@ -41,12 +42,14 @@ class Sketch {
     this.dotsArray = [];
     this.scrolling = false;
     this.touchStartY = 0;
-    this.container = document.getElementById("slider");
-    this.mainRect = document.querySelector(".main").getBoundingClientRect();
-    this.images = JSON.parse(this.container.getAttribute("data-images"));
-    this.width = this.container.offsetWidth;
-    this.height = this.container.offsetHeight;
-    this.container.appendChild(this.renderer.domElement);
+    this.slider = slider;
+    this.container = document
+      .querySelector(".home-slider")
+      .getBoundingClientRect();
+    this.images = data;
+    this.width = this.slider.offsetWidth;
+    this.height = this.slider.offsetHeight;
+    this.slider.appendChild(this.renderer.domElement);
     this.camera = new THREE.PerspectiveCamera(
       70,
       window.innerWidth / window.innerHeight,
@@ -90,6 +93,29 @@ class Sketch {
       }
     });
 
+    document.addEventListener("scrollend", (e) => {
+      // if (window.scrollY < this.container.top) return;
+
+      const scrollPos = window.scrollY - this.container.top;
+
+      // const sliderH = window.innerHeight * this.images.length;
+      // console.log('window y:', window.scrollY)
+      // console.log('scrollpos:', scrollPos)
+
+      if (scrollPos <= 0) {
+        if (this.current !== 0) this.slideTo(0);
+      } else {
+        const newIndex = Math.round(scrollPos / window.innerHeight);
+        if (newIndex !== this.current && newIndex < this.images.length)
+          this.slideTo(newIndex);
+        else if (
+          newIndex > this.images.length &&
+          this.current !== this.images.length - 1
+        )
+          this.slideTo(this.images.length - 1);
+      }
+    });
+
     Promise.all(promises).then(() => {
       cb();
       //make the first dot active
@@ -99,13 +125,16 @@ class Sketch {
   }
 
   clickEvent() {
+    // next
     this.clicker.addEventListener("click", () => {
-      this.next();
+      this.slideTo((this.current + 1) % this.textures.length);
     });
   }
   clickEvent2() {
+    // prev
     this.clicker2.addEventListener("click", () => {
-      this.prev();
+      this.slideTo((this.current - 1) % this.textures.length);
+      // this.prev();
     });
   }
 
@@ -157,8 +186,8 @@ class Sketch {
   }
 
   resize() {
-    this.width = this.container.offsetWidth;
-    this.height = this.container.offsetHeight;
+    this.width = this.slider.offsetWidth;
+    this.height = this.slider.offsetHeight;
     this.renderer.setSize(this.width, this.height);
     this.camera.aspect = this.width / this.height;
     // image cover
@@ -245,7 +274,7 @@ class Sketch {
     setTimeout(() => this.activeDot(nextIndex, true), 500); // first dot transition
 
     //update scroll position
-    lenis.scrollTo(this.mainRect.top + window.innerHeight * (nextIndex + 1), {
+    lenis.scrollTo(this.container.top + window.innerHeight * (nextIndex + 1), {
       duration: 1,
       lock: true,
     });
@@ -275,7 +304,7 @@ class Sketch {
     this.material.uniforms.texture2.value = prevTexture;
 
     //update scroll position
-    lenis.scrollTo(this.mainRect.top + window.innerHeight * prevIndex, {
+    lenis.scrollTo(this.container.top + window.innerHeight * prevIndex, {
       duration: 1,
       lock: true,
     });
@@ -289,10 +318,38 @@ class Sketch {
       value: 1,
       ease: Power2[this.easing],
       onComplete: () => {
-        //console.log('FINISH');
-
         this.current = prevIndex;
         this.material.uniforms.texture1.value = prevTexture;
+        this.material.uniforms.progress.value = 0;
+        this.isRunning = false;
+      },
+    });
+  }
+  slideTo(nextIndex) {
+    if (this.isRunning) return;
+    const len = this.textures.length;
+
+    this.isRunning = true;
+    let nextTexture = this.textures[nextIndex];
+    this.material.uniforms.texture2.value = nextTexture;
+
+    //update scroll position
+    // lenis.scrollTo(this.container.top + window.innerHeight * nextIndex, {
+    //   duration: 1,
+    //   lock: true,
+    // });
+
+    // update dots
+    this.activeDot(this.current, false);
+    setTimeout(() => this.activeDot(nextIndex, true), 500); // first dot transition
+
+    // let tl = new TimelineMax();
+    gsap.to(this.material.uniforms.progress, this.duration, {
+      value: 1,
+      ease: Power2[this.easing],
+      onComplete: () => {
+        this.current = nextIndex;
+        this.material.uniforms.texture1.value = nextTexture;
         this.material.uniforms.progress.value = 0;
         this.isRunning = false;
       },
@@ -433,4 +490,11 @@ void main() {
     gl_FragColor = mix(t1, t2, progress);
 }
   `,
+});
+
+const dots = document.querySelectorAll(".slider-dot");
+dots.forEach((dot, i) => {
+  dot.addEventListener("click", () => {
+    if (sketch) sketch.slideTo(i);
+  });
 });
