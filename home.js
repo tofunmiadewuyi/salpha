@@ -82,14 +82,8 @@ function initSun() {
         ease: "power2.inOut",
       },
       "<"
-    )
-    .to(
-      ".home-slider",
-      {
-        opacity: 1,
-      },
-      "<"
     );
+
 
   // Cleanup on page unload
   window.addEventListener("beforeunload", () => {
