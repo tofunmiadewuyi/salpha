@@ -1,26 +1,52 @@
-console.log("salpha home");
+// v1.0.0
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
 };
 
 const sunEl = document.querySelector(".c-sun");
-gsap.fromTo(
-  sunEl,
-  {
-    marginBottom: "0px",
-    scale: 1,
-  },
-  {
-    marginBottom: "-375px",
-    duration: 1.5,
-    ease: "power2.inOut",
-    delay: 1.5,
-    onComplete: () => {
-      initSun();
+
+gsap
+  .timeline()
+  .fromTo(
+    sunEl,
+    {
+      marginBottom: "0px",
+      // scale: 1,
     },
-  }
-);
+    {
+      marginBottom: "-375px",
+      duration: 1.5,
+      ease: "power2.inOut",
+      delay: 1.5,
+      onComplete: () => {
+        initSun();
+      },
+    }
+  )
+  .to(".sun-eclipse", { yPercent: 20 }, "<")
+  .from(".sun-glow, .sun-el", { scale: 0.7, y: 15 }, "<")
+  .to(".sun-eclipse", { scale: 0 }, "<+=0.2")
+  .fromTo(
+    ".hero-content > *",
+    {
+      translateZ: "90px",
+      rotateX: "60deg",
+      scale: 1.2,
+      opacity: 0,
+      yPercent: 10,
+    },
+    {
+      opacity: 1,
+      translateZ: "0px",
+      rotateX: "5deg",
+      scale: 1,
+      stagger: 0.15,
+      yPercent: 0,
+      ease: "power2.out",
+    },
+    "<+=1"
+  );
 
 function initSun() {
   const sunTl = gsap.timeline({
@@ -66,24 +92,22 @@ function initSun() {
       "<"
     );
 
-  gsap
-    .to(
-      ".slider-mask",
-      {
-        scrollTrigger: {
-          trigger: ".home-slider",
-          markers: true,
-          scrub: 1,
-          start: "top bottom",
-        },
-        //   yPercent: -100,
-        // opacity: 0,
-        backgroundPosition: "0 100%",
-        ease: "power2.inOut",
+  gsap.to(
+    ".slider-mask",
+    {
+      scrollTrigger: {
+        trigger: ".home-slider",
+        // markers: true,
+        scrub: 1,
+        start: "top bottom",
       },
-      "<"
-    );
-
+      //   yPercent: -100,
+      // opacity: 0,
+      backgroundPosition: "0 100%",
+      ease: "power2.inOut",
+    },
+    "<"
+  );
 
   // Cleanup on page unload
   window.addEventListener("beforeunload", () => {

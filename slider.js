@@ -1,3 +1,5 @@
+// v1.0.0
+
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
 
@@ -5,19 +7,28 @@ let sliderST = ScrollTrigger.create({
   trigger: ".home-slider",
   pin: ".home-slider",
   start: "top 0%",
-  end: `+=${window.innerHeight * data.length - 1}`, //end of the last slide
+  end: `+=${window.innerHeight * (data.length - 1)}`, //end of the last slide
+
   // markers: true,
   onEnter: () => {
-    // lenis.options.wheelMultiplier = 0.3;
+    if (sketch) {
+      lenis.stop();
+      sketch.showContent(0, 1);
+      lenis.start();
+    }
+    console.log("onEnter");
   },
   onLeave: () => {
-    // if (sketch) sketch.unMountListeners();
+    console.log("onLeave");
   },
   onEnterBack: () => {
-    // if (sketch) sketch.mountListeners();
+    console.log("onEnterBack");
   },
   onLeaveBack: () => {
-    console.log("on leave back");
+    if (sketch) {
+      sketch.removeContent(0, -1);
+    }
+    console.log("onLeaveBack");
   },
 });
 
@@ -47,6 +58,7 @@ class Sketch {
       .querySelector(".home-slider")
       .getBoundingClientRect();
     this.images = data;
+    this.content = Array.from(document.querySelectorAll(".slider-content"));
     this.width = this.slider.offsetWidth;
     this.height = this.slider.offsetHeight;
     this.slider.appendChild(this.renderer.domElement);
@@ -98,17 +110,15 @@ class Sketch {
 
       const scrollPos = window.scrollY - this.container.top;
 
-      // const sliderH = window.innerHeight * this.images.length;
-      // console.log('window y:', window.scrollY)
-      // console.log('scrollpos:', scrollPos)
-
       if (scrollPos <= 0) {
         if (this.current !== 0) this.slideTo(0);
       } else {
         const newIndex = Math.round(scrollPos / window.innerHeight);
-        if (newIndex !== this.current && newIndex < this.images.length)
+        console.log("new Index:", newIndex);
+
+        if (newIndex !== this.current && newIndex < this.images.length) {
           this.slideTo(newIndex);
-        else if (
+        } else if (
           newIndex > this.images.length &&
           this.current !== this.images.length - 1
         )
@@ -120,7 +130,7 @@ class Sketch {
       cb();
       //make the first dot active
       this.dotsArray = Array.from(this.dots.querySelectorAll(".slider-dot"));
-      this.activeDot(this.current, true);
+      this.activeDot(0, true);
     });
   }
 
@@ -134,7 +144,6 @@ class Sketch {
     // prev
     this.clicker2.addEventListener("click", () => {
       this.slideTo((this.current - 1) % this.textures.length);
-      // this.prev();
     });
   }
 
@@ -144,6 +153,42 @@ class Sketch {
     } else {
       this.dotsArray[index].classList.remove("cc-active");
     }
+  }
+
+  showContent(index, direction) {
+    gsap
+      .timeline()
+      .set(this.content[index], { className: "slider-content cc-active" }, "<")
+      .fromTo(
+        this.content[index].children,
+        {
+          yPercent: 40 * direction,
+          opacity: 0,
+        },
+        {
+          yPercent: 0,
+          opacity: 1,
+          stagger: 0.3,
+          duration: 1.2,
+          ease: "power4.out",
+        },
+        "<0.5"
+      );
+  }
+
+  removeContent(index, direction) {
+    gsap
+      .timeline({
+        onComplete: () => {
+          this.content[index].classList.remove("cc-active");
+        },
+      })
+      .to(this.content[index].children, {
+        opacity: 0,
+        yPercent: -40 * direction,
+        duration: 0.5,
+        ease: "easeOut",
+      });
   }
 
   settings() {
@@ -284,8 +329,6 @@ class Sketch {
       value: 1,
       ease: Power2[this.easing],
       onComplete: () => {
-        //console.log('FINISH');
-
         this.current = nextIndex;
         this.material.uniforms.texture1.value = nextTexture;
         this.material.uniforms.progress.value = 0;
@@ -333,27 +376,51 @@ class Sketch {
     let nextTexture = this.textures[nextIndex];
     this.material.uniforms.texture2.value = nextTexture;
 
-    //update scroll position
-    // lenis.scrollTo(this.container.top + window.innerHeight * nextIndex, {
-    //   duration: 1,
-    //   lock: true,
-    // });
+    lenis.stop();
 
     // update dots
-    this.activeDot(this.current, false);
+    if (this.current >= 0) this.activeDot(this.current, false);
     setTimeout(() => this.activeDot(nextIndex, true), 500); // first dot transition
 
-    // let tl = new TimelineMax();
-    gsap.to(this.material.uniforms.progress, this.duration, {
-      value: 1,
-      ease: Power2[this.easing],
+    const direction = this.current < nextIndex ? 1 : -1;
+
+    // remove content
+    if (this.current >= 0) this.removeContent(this.current, direction);
+
+    let tl = gsap.timeline({
       onComplete: () => {
         this.current = nextIndex;
         this.material.uniforms.texture1.value = nextTexture;
         this.material.uniforms.progress.value = 0;
         this.isRunning = false;
+        lenis.start();
       },
     });
+
+    tl.to(this.material.uniforms.progress, this.duration, {
+      value: 1,
+      ease: Power2[this.easing],
+    })
+      .set(
+        this.content[nextIndex],
+        { className: "slider-content cc-active" },
+        "<"
+      )
+      .fromTo(
+        this.content[nextIndex].children,
+        {
+          yPercent: 40 * direction,
+          opacity: 0,
+        },
+        {
+          yPercent: 0,
+          opacity: 1,
+          stagger: 0.3,
+          duration: 1.2,
+          ease: "power4.out",
+        },
+        "<0.5"
+      );
   }
   scroll(e) {
     e.preventDefault();
