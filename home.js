@@ -1,4 +1,4 @@
-// v1.0.1
+// v.1.3
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
@@ -6,13 +6,13 @@ window.onbeforeunload = function () {
 
 const sunEl = document.querySelector(".c-sun");
 
+lenis.stop();
 gsap
   .timeline()
   .fromTo(
     sunEl,
     {
       marginBottom: "0px",
-      // scale: 1,
     },
     {
       marginBottom: "-375px",
@@ -20,6 +20,7 @@ gsap
       ease: "power2.inOut",
       delay: 1.5,
       onComplete: () => {
+        lenis.start();
         initSun();
       },
     }
@@ -52,8 +53,6 @@ function initSun() {
   const sunTl = gsap.timeline({
     scrollTrigger: {
       trigger: ".home-slider",
-      //   pin: ".c-sun",
-      //   pinSpacing: false,
       start: "top bottom",
       end: `bottom bottom`,
 
@@ -80,7 +79,6 @@ function initSun() {
   sunTl
     .to(sunEl, {
       marginBottom: "125px",
-      //   opacity: 0,
       scale: 0.23,
       ease: "none",
     })
@@ -101,8 +99,6 @@ function initSun() {
         scrub: 1,
         start: "top bottom",
       },
-      //   yPercent: -100,
-      // opacity: 0,
       backgroundPosition: "0 100%",
       ease: "power2.inOut",
     },
@@ -123,7 +119,6 @@ stickyHeaders.forEach((header) => {
     end: (self) => self.start + header.offsetHeight * 2,
     pin: header,
     pinSpacing: false,
-    markers: true,
     onUpdate: () => {
       gsap.set(header, { yPercent: -105 });
     },

@@ -1,4 +1,4 @@
-// v1.0.1
+// v.1.3
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));

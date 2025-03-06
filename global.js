@@ -1,19 +1,19 @@
-// v1.0.0
+// v.1.3
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
 const lenis = new Lenis({
-  //   wheelMutliplier: 0.6,
   duration: 1.25,
-  //   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
 });
 function raf(time) {
   lenis.raf(time);
   requestAnimationFrame(raf);
 }
 requestAnimationFrame(raf);
+
 lenis.on("scroll", ScrollTrigger.update);
+lenis.on("scroll", ScrollTrigger.refresh);
 
 gsap.ticker.add((time) => {
   lenis.raf(time * 1000);
