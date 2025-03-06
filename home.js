@@ -1,4 +1,4 @@
-// v1.0.0
+// v1.0.1
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
@@ -114,3 +114,21 @@ function initSun() {
     if (sliderST) sliderST.kill();
   });
 }
+
+const stickyHeaders = document.querySelectorAll(".sticky-header");
+stickyHeaders.forEach((header) => {
+  ScrollTrigger.create({
+    trigger: header,
+    start: `top-=${header.offsetHeight} bottom`,
+    end: (self) => self.start + header.offsetHeight * 2,
+    pin: header,
+    pinSpacing: false,
+    markers: true,
+    onUpdate: () => {
+      gsap.set(header, { yPercent: -105 });
+    },
+    onComplete: () => {
+      gsap.set(header, { yPercent: 0 });
+    },
+  });
+});
