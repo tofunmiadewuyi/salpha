@@ -1,4 +1,4 @@
-// v1.0.0
+// v1.0.1
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -16,19 +16,17 @@ let sliderST = ScrollTrigger.create({
       sketch.showContent(0, 1);
       lenis.start();
     }
-    console.log("onEnter");
   },
-  onLeave: () => {
-    console.log("onLeave");
-  },
-  onEnterBack: () => {
-    console.log("onEnterBack");
-  },
+  onLeave: () => {},
+  onEnterBack: () => {},
   onLeaveBack: () => {
     if (sketch) {
       sketch.removeContent(0, -1);
     }
-    console.log("onLeaveBack");
+    // console.log("onLeaveBack");
+  },
+  onComplete: () => {
+    lenis.resize();
   },
 });
 

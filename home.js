@@ -129,6 +129,7 @@ stickyHeaders.forEach((header) => {
     },
     onComplete: () => {
       gsap.set(header, { yPercent: 0 });
+      lenis.resize();
     },
   });
 });
