@@ -1,4 +1,4 @@
-// v.1.3
+// v.1.4
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -8,8 +8,6 @@ let sliderST = ScrollTrigger.create({
   pin: ".home-slider",
   start: "top 0%",
   end: `+=${window.innerHeight * (data.length - 1)}`, //end of the last slide
-
-  // markers: true,
   onEnter: () => {
     if (sketch) {
       lenis.stop();
@@ -17,16 +15,17 @@ let sliderST = ScrollTrigger.create({
       lenis.start();
     }
   },
-  onLeave: () => {},
+  onLeave: () => {
+    if (sketch) {
+      sketch.unMountListeners();
+    }
+  },
   onEnterBack: () => {},
   onLeaveBack: () => {
     if (sketch) {
       sketch.removeContent(0, -1);
+      sketch.unMountListeners();
     }
-    // console.log("onLeaveBack");
-  },
-  onComplete: () => {
-    lenis.resize();
   },
 });
 
@@ -45,11 +44,10 @@ class Sketch {
     this.duration = opts.duration || 1;
     this.debug = opts.debug || false;
     this.easing = opts.easing || "easeInOut";
-    this.clicker = document.getElementById("slider-next");
-    this.clicker2 = document.getElementById("slider-prev");
+    this.clickNext = document.getElementById("slider-next");
+    this.clickPrev = document.getElementById("slider-prev");
     this.dots = document.getElementById("slider-dots-group");
-    this.dotsArray = [];
-    this.scrolling = false;
+    this.scrolling = false; // to remove
     this.touchStartY = 0;
     this.slider = slider;
     this.container = document
@@ -72,7 +70,6 @@ class Sketch {
     this.textures = [];
     this.paused = true;
     // Store bound methods as instance properties
-    this.boundScroll = this.scroll.bind(this);
     this.boundTouchStart = this.touchStart.bind(this);
     this.boundTouchMove = this.touchMove.bind(this);
     this.boundKeydown = this.keydown.bind(this);
@@ -83,8 +80,8 @@ class Sketch {
       this.settings();
       this.addObjects();
       this.resize();
-      this.clickEvent();
-      this.clickEvent2();
+      this.click();
+      this.scroll();
       this.play();
     });
   }
@@ -103,45 +100,14 @@ class Sketch {
       }
     });
 
-    document.addEventListener("scrollend", (e) => {
-      // if (window.scrollY < this.container.top) return;
-
-      const scrollPos = window.scrollY - this.container.top;
-
-      if (scrollPos <= 0) {
-        if (this.current !== 0) this.slideTo(0);
-      } else {
-        const newIndex = Math.round(scrollPos / window.innerHeight);
-        console.log("new Index:", newIndex);
-
-        if (newIndex !== this.current && newIndex < this.images.length) {
-          this.slideTo(newIndex);
-        } else if (
-          newIndex > this.images.length &&
-          this.current !== this.images.length - 1
-        )
-          this.slideTo(this.images.length - 1);
-      }
-    });
+    // initialize the array with the new number of dots
+    this.dotsArray = Array.from(this.dots.querySelectorAll(".slider-dot"));
 
     Promise.all(promises).then(() => {
       cb();
       //make the first dot active
-      this.dotsArray = Array.from(this.dots.querySelectorAll(".slider-dot"));
       this.activeDot(0, true);
-    });
-  }
-
-  clickEvent() {
-    // next
-    this.clicker.addEventListener("click", () => {
-      this.slideTo((this.current + 1) % this.textures.length);
-    });
-  }
-  clickEvent2() {
-    // prev
-    this.clicker2.addEventListener("click", () => {
-      this.slideTo((this.current - 1) % this.textures.length);
+      this.mountListeners();
     });
   }
 
@@ -190,42 +156,16 @@ class Sketch {
   }
 
   settings() {
-    let that = this;
-    if (this.debug) this.gui = new dat.GUI();
     this.settings = {
       progress: 0.5,
     };
     Object.keys(this.uniforms).forEach((item) => {
       this.settings[item] = this.uniforms[item].value;
-      if (this.debug)
-        this.gui.add(
-          this.settings,
-          item,
-          this.uniforms[item].min,
-          this.uniforms[item].max,
-          0.01
-        );
     });
   }
 
   setupResize() {
     window.addEventListener("resize", this.resize.bind(this));
-  }
-
-  mountListeners() {
-    window.addEventListener("wheel", this.boundScroll, {
-      passive: false,
-    });
-    window.addEventListener("touchstart", this.boundTouchStart);
-    window.addEventListener("touchmove", this.boundTouchMove);
-    window.addEventListener("keydown", this.boundKeydown);
-  }
-
-  unMountListeners() {
-    window.removeEventListener("wheel", this.boundScroll);
-    window.removeEventListener("touchstart", this.boundTouchStart);
-    window.removeEventListener("touchmove", this.boundTouchMove);
-    window.removeEventListener("keydown", this.boundKeydown);
   }
 
   resize() {
@@ -293,6 +233,7 @@ class Sketch {
     this.plane = new THREE.Mesh(this.geometry, this.material);
     this.scene.add(this.plane);
   }
+
   stop() {
     this.paused = true;
   }
@@ -300,72 +241,7 @@ class Sketch {
     this.paused = false;
     this.render();
   }
-  next() {
-    if (this.isRunning) return;
-    if (this.current === this.textures.length - 1) {
-      return this.unMountListeners();
-    }
 
-    this.isRunning = true;
-    let len = this.textures.length;
-    const nextIndex = (this.current + 1) % len;
-    let nextTexture = this.textures[nextIndex];
-    this.material.uniforms.texture2.value = nextTexture;
-
-    //update dots
-    this.activeDot(this.current, false);
-    setTimeout(() => this.activeDot(nextIndex, true), 500); // first dot transition
-
-    //update scroll position
-    lenis.scrollTo(this.container.top + window.innerHeight * (nextIndex + 1), {
-      duration: 1,
-      lock: true,
-    });
-
-    let tl = new TimelineMax();
-    tl.to(this.material.uniforms.progress, this.duration, {
-      value: 1,
-      ease: Power2[this.easing],
-      onComplete: () => {
-        this.current = nextIndex;
-        this.material.uniforms.texture1.value = nextTexture;
-        this.material.uniforms.progress.value = 0;
-        this.isRunning = false;
-      },
-    });
-  }
-  prev() {
-    if (this.isRunning) return;
-    if (this.current === 0) return this.unMountListeners();
-
-    this.isRunning = true;
-    let len = this.textures.length;
-    const prevIndex = this.current === 0 ? len - 1 : this.current - 1;
-    let prevTexture = this.textures[prevIndex];
-    this.material.uniforms.texture2.value = prevTexture;
-
-    //update scroll position
-    lenis.scrollTo(this.container.top + window.innerHeight * prevIndex, {
-      duration: 1,
-      lock: true,
-    });
-
-    // update dots
-    this.activeDot(this.current, false);
-    setTimeout(() => this.activeDot(prevIndex, true), 500); // first dot transition
-
-    let tl = new TimelineMax();
-    tl.to(this.material.uniforms.progress, this.duration, {
-      value: 1,
-      ease: Power2[this.easing],
-      onComplete: () => {
-        this.current = prevIndex;
-        this.material.uniforms.texture1.value = prevTexture;
-        this.material.uniforms.progress.value = 0;
-        this.isRunning = false;
-      },
-    });
-  }
   slideTo(nextIndex) {
     if (this.isRunning) return;
     const len = this.textures.length;
@@ -374,7 +250,14 @@ class Sketch {
     let nextTexture = this.textures[nextIndex];
     this.material.uniforms.texture2.value = nextTexture;
 
-    lenis.stop();
+    // update scroll position
+    lenis.scrollTo(this.container.top + window.innerHeight * nextIndex, {
+      duration: 1,
+      lock: true,
+      onComplete: () => {
+        lenis.stop();
+      },
+    });
 
     // update dots
     if (this.current >= 0) this.activeDot(this.current, false);
@@ -420,26 +303,47 @@ class Sketch {
         "<0.5"
       );
   }
-  scroll(e) {
-    e.preventDefault();
 
-    if (this.scrolling) return;
+  prev() {
+    this.slideTo((this.current - 1) % this.textures.length);
+  }
 
-    this.scrolling = true;
+  next() {
+    this.slideTo((this.current + 1) % this.textures.length);
+  }
 
-    if (e.deltaY > 0) {
-      this.next(); // User scrolled down
-    } else {
-      this.prev(); // User scrolled up
-    }
+  scroll() {
+    lenis.on("scroll", ({ scroll }) => {
+      const scrollPos = scroll - this.container.top;
 
-    this.scrolling = false;
+      if (scrollPos <= 0) {
+        if (this.current !== 0) this.slideTo(0);
+      } else {
+        const newIndex = Math.round(scrollPos / window.innerHeight);
+        if (newIndex !== this.current && newIndex < this.images.length) {
+          this.slideTo(newIndex);
+        } else if (
+          newIndex > this.images.length &&
+          this.current !== this.images.length - 1
+        )
+          this.slideTo(this.images.length - 1);
+      }
+    });
+  }
+
+  click() {
+    this.clickNext.addEventListener("click", () => {
+      this.next();
+    });
+    this.clickPrev.addEventListener("click", () => {
+      this.prev();
+    });
   }
 
   keydown(e) {
-    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+    if (e.key === "ArrowDown" || e.key === "ArrowDown") {
       this.next();
-    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+    } else if (e.key === "ArrowUp" || e.key === "ArrowUp") {
       this.prev();
     }
   }
@@ -461,6 +365,18 @@ class Sketch {
       }
       this.touchStartY = touchCurrentY; // Reset the touch position
     }
+  }
+
+  mountListeners() {
+    window.addEventListener("touchstart", this.boundTouchStart);
+    window.addEventListener("touchmove", this.boundTouchMove);
+    window.addEventListener("keydown", this.boundKeydown);
+  }
+
+  unMountListeners() {
+    window.removeEventListener("touchstart", this.boundTouchStart);
+    window.removeEventListener("touchmove", this.boundTouchMove);
+    window.removeEventListener("keydown", this.boundKeydown);
   }
 
   render() {

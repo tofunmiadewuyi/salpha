@@ -1,4 +1,4 @@
-// v.1.3
+// v.1.4
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
@@ -13,10 +13,24 @@ function raf(time) {
 requestAnimationFrame(raf);
 
 lenis.on("scroll", ScrollTrigger.update);
-lenis.on("scroll", ScrollTrigger.refresh);
+
+const updateScroll = () => {
+  ScrollTrigger.refresh(true);
+  setTimeout(() => {
+    lenis.resize();
+  }, 1000);
+};
+
+window.addEventListener("resize", () => {
+  updateScroll();
+});
 
 gsap.ticker.add((time) => {
   lenis.raf(time * 1000);
 });
 
 gsap.ticker.lagSmoothing(0);
+
+window.onbeforeunload = function () {
+  ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+};
