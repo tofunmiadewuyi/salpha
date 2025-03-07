@@ -1,4 +1,4 @@
-// v.1.4
+// v.1.5
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
@@ -34,3 +34,22 @@ gsap.ticker.lagSmoothing(0);
 window.onbeforeunload = function () {
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 };
+
+const stickyHeaders = document.querySelectorAll(".sticky-header");
+stickyHeaders.forEach((header) => {
+  ScrollTrigger.create({
+    trigger: header,
+    start: `top-=${header.offsetHeight} bottom`,
+    end: "bottom bottom",
+    pin: header,
+    pinSpacing: false,
+    onUpdate: (self) => {
+      if (self.progress < 0.1)
+        gsap.set(header, { yPercent: -105 * self.progress });
+      else gsap.set(header, { yPercent: -105 });
+    },
+    onComplete: () => {
+      gsap.set(header, { yPercent: 0 });
+    },
+  });
+});

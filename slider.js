@@ -1,4 +1,4 @@
-// v.1.4
+// v.1.5
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -9,6 +9,8 @@ let sliderST = ScrollTrigger.create({
   start: "top 0%",
   end: `+=${window.innerHeight * (data.length - 1)}`, //end of the last slide
   onEnter: () => {
+    // TODO: fix callbacks, bugyy content removal and the likes
+    // console.log("on enter");
     if (sketch) {
       lenis.stop();
       sketch.showContent(0, 1);
@@ -16,12 +18,19 @@ let sliderST = ScrollTrigger.create({
     }
   },
   onLeave: () => {
+    // console.log("on leave");
     if (sketch) {
       sketch.unMountListeners();
     }
   },
-  onEnterBack: () => {},
+  onEnterBack: () => {
+    // console.log("on enter back");
+    if (sketch) {
+      sketch.mountListeners();
+    }
+  },
   onLeaveBack: () => {
+    // console.log("on leave back");
     if (sketch) {
       sketch.removeContent(0, -1);
       sketch.unMountListeners();
