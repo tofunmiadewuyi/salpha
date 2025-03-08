@@ -1,4 +1,4 @@
-// v.1.5
+// v.1.6
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -253,7 +253,6 @@ class Sketch {
 
   slideTo(nextIndex) {
     if (this.isRunning) return;
-    const len = this.textures.length;
 
     this.isRunning = true;
     let nextTexture = this.textures[nextIndex];
@@ -314,11 +313,13 @@ class Sketch {
   }
 
   prev() {
-    this.slideTo((this.current - 1) % this.textures.length);
+    if (this.current > 0)
+      this.slideTo((this.current - 1) % this.textures.length);
   }
 
   next() {
-    this.slideTo((this.current + 1) % this.textures.length);
+    if (this.current < this.textures.length - 1)
+      this.slideTo((this.current + 1) % this.textures.length);
   }
 
   scroll() {

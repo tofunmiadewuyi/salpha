@@ -1,4 +1,4 @@
-// v.1.5
+// v.1.6
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
@@ -35,21 +35,27 @@ window.onbeforeunload = function () {
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 };
 
-const stickyHeaders = document.querySelectorAll(".sticky-header");
-stickyHeaders.forEach((header) => {
-  ScrollTrigger.create({
-    trigger: header,
-    start: `top-=${header.offsetHeight} bottom`,
-    end: "bottom bottom",
-    pin: header,
-    pinSpacing: false,
-    onUpdate: (self) => {
-      if (self.progress < 0.1)
-        gsap.set(header, { yPercent: -105 * self.progress });
-      else gsap.set(header, { yPercent: -105 });
-    },
-    onComplete: () => {
-      gsap.set(header, { yPercent: 0 });
-    },
-  });
-});
+class StickySection {
+  constructor(opts) {
+    this.section = this.getNode(opts.section);
+    this.preceeding = this.getNode(opts.preceeding);
+
+    gsap.set(this.section, { y: "-50vh" });
+    this.init();
+  }
+
+  init() {
+    ScrollTrigger.create({
+      trigger: this.preceeding,
+      start: `bottom bottom`,
+      end: "bottom center",
+      pin: this.section,
+      pinSpacing: false,
+    });
+  }
+
+  getNode(arg) {
+    if (arg instanceof Node) return arg;
+    else return document.querySelector(arg);
+  }
+}
