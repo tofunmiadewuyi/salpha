@@ -1,4 +1,4 @@
-// v.1.6
+// v.1.7
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
@@ -8,6 +8,7 @@ const sunEl = document.querySelector(".c-sun");
 const heroSection = document.querySelector('.section[section="hero"]');
 const ctaSection = document.querySelector('.section[section="cta"]');
 
+sunEl.style.opacity = "1";
 lenis.stop();
 introAnimation();
 
@@ -56,59 +57,28 @@ function introAnimation() {
 }
 
 function heroAnimation() {
-  const hero = {
-    el: heroSection,
-    name: heroSection.getAttribute("section"),
-    bounds: heroSection.getBoundingClientRect(),
-  };
-
-  ScrollTrigger.create({
-    trigger: heroSection,
-    start: "top top",
-    end: "bottom bottom",
-    scrub: true,
-    onUpdate: () => {
-      const deltaY = lenis.scroll * 1.25;
-
-      let progress;
-      if (Array.isArray(hero.pf)) {
-        progress = hero.pf.map(
-          (factor) => (deltaY / hero.bounds.height) * (1 / factor)
-        );
-      } else {
-        progress = (deltaY / hero.bounds.height) * (1 / hero.pf);
-      }
-
-      if (Array.isArray(hero.timelines)) {
-        const tlp = Array.isArray(progress)
-          ? progress
-          : hero.timelines.map((_) => progress);
-        hero.timelines.forEach((timeline, i) => {
-          timeline.progress(tlp[i]);
-        });
-      } else {
-        hero.timelines.progress(progress);
-      }
-    },
-  });
-
-  const sunHeroAnimation = gsap
+  gsap
     .timeline({
-      paused: true,
-      onUpdate: () => {
-        // fade out the sun
-        const progress = hero.timelines[0].progress();
-        if (progress >= 0.9) {
-          const opacityProgress = 1 - (progress - 0.9) * 10;
-          const blurAmount = Math.min(80, (1 - opacityProgress) * 30);
+      scrollTrigger: {
+        trigger: ".hero-inner",
+        start: "top top",
+        end: `bottom+=${window.innerHeight * 0.47} 47%`,
+        scrub: true,
+        onUpdate: (self) => {
+          // fade out the sun
+          const progress = self.progress;
+          if (progress >= 0.9) {
+            const opacityProgress = 1 - (progress - 0.9) * 10;
+            const blurAmount = Math.min(80, (1 - opacityProgress) * 30);
 
-          gsap.set(sunEl, {
-            opacity: Math.max(0, opacityProgress),
-            filter: `blur(${blurAmount}px)`,
-          });
-        } else {
-          gsap.set(sunEl, { opacity: 1, filter: "blur(0px)" }); // untouched until 90%
-        }
+            gsap.set(sunEl, {
+              opacity: Math.max(0, opacityProgress),
+              filter: `blur(${blurAmount}px)`,
+            });
+          } else {
+            gsap.set(sunEl, { opacity: 1, filter: "blur(0px)" });
+          }
+        },
       },
       onComplete: () => {
         gsap.set(sunEl, { marginBottom: "65px" });
@@ -121,42 +91,6 @@ function heroAnimation() {
       ease: "none",
     })
     .to(".sun-el, .sun-glow", { backgroundColor: "#FFBF5A" }, "<");
-
-  const sliderMaskAnimation = gsap
-    .timeline({
-      paused: true,
-      onUpdate: () => {
-        // remove the mask
-        const progress = hero.timelines[1].progress();
-        if (progress >= 0.9) {
-          const opacityProgress = 1 - (progress - 0.9) * 10;
-          gsap.set(".slider-mask", {
-            opacity: Math.max(0, opacityProgress),
-          });
-        } else {
-          gsap.set(".slider-mask", { opacity: 1 }); // opacity at 1 until 90%
-        }
-      },
-    })
-    .to(".slider-mask", { backgroundPosition: "0 45%" });
-
-  // add to the hero section object
-  hero.timelines = [sunHeroAnimation, sliderMaskAnimation];
-  hero.pf = [0.26, 0.28]; // pf = progress factor for respective anims. 🧙🏾
-
-  // clouds
-  const clouds = document.querySelectorAll(".c-cloud");
-  gsap.set(clouds, { yPercent: 20, opacity: 0, filter: "blur(8px)" });
-  gsap
-    .timeline({
-      scrollTrigger: {
-        trigger: ctaSection,
-        start: "top bottom",
-        end: `+=200`,
-        scrub: true,
-      },
-    })
-    .to(clouds, { yPercent: 0, opacity: 1, filter: "blur(0px)" });
 }
 
 function ctaAnimations() {
@@ -169,24 +103,32 @@ function ctaAnimations() {
       scrollTrigger: {
         trigger: ctaSection,
         start: "top center",
-        end: `+=${window.innerHeight / 3}`,
-        scrub: true,
+        end: `+=${window.innerHeight / 2}`,
+        scrub: 1,
       },
     })
     .to(sunEl, { marginBottom: "-375px", opacity: 1, scale: 1.25 });
 
   const ctaContent = document.querySelectorAll(".cta-content");
 
+  const content1 = Array.from(ctaContent[0].querySelectorAll("*")).filter(
+    (el) => {
+      return (
+        el.classList.contains("c-button") || !(el.closest(".c-button") !== null)
+      );
+    }
+  );
+
   // show content 1
   gsap.fromTo(
-    ctaContent[0].querySelectorAll("*"),
+    content1,
     { opacity: 0, yPercent: (i) => i * 20 },
     {
       scrollTrigger: {
         trigger: ctaContent[0],
         start: "top center",
         end: "bottom center",
-        scrub: true,
+        scrub: 1,
       },
       opacity: 1,
       yPercent: 0,
@@ -220,7 +162,7 @@ function ctaAnimations() {
         trigger: ctaContent[1],
         start: "top+=20 bottom",
         end: "bottom bottom",
-        scrub: true,
+        scrub: 1,
       },
       opacity: 1,
       yPercent: 0,
@@ -271,27 +213,35 @@ function ctaAnimations() {
 const discoverCards = document.querySelectorAll(".dg-card");
 
 function flip(e) {
-  const card = e.target;
+  const target = e.target;
 
-  const innerEl = card.querySelector(".dg-card_inner");
+  const card = target.closest(".dg-card");
 
-  if (innerEl) {
-    innerEl.classList.toggle("cc-flipped");
+  if (card) {
+    card.classList.toggle("cc-flip");
   }
 }
 
 discoverCards.forEach((el) => el.addEventListener("mouseenter", flip));
 discoverCards.forEach((el) => el.addEventListener("mouseleave", flip));
 
-// sticky sections
-document.addEventListener("DOMContentLoaded", () => {
-  new StickySection({
-    section: ".s-limitless",
-    preceeding: '.section[section="numbers"]',
-  });
+//sticky sections
+const sections = document.querySelectorAll(
+  '.page-wrapper > *:not([section="hero"]):not([section="cta"]):not(.c-nav):not(.c-footer)'
+);
 
-  new StickySection({
-    section: ".s-ahead",
-    preceeding: ".s-limitless",
-  });
+sections.forEach((section, i) => {
+  section.style.zIndex = sections.length - i;
+});
+
+const allChildren = Array.from(
+  document.querySelectorAll(".page-wrapper > *:not(.c-nav)")
+);
+const selectedChildren = new Set(sections);
+const excludedChildren = allChildren.filter(
+  (child) => !selectedChildren.has(child)
+);
+
+excludedChildren.forEach((child) => {
+  child.style.zIndex = sections.length;
 });

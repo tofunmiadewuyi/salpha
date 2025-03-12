@@ -1,20 +1,70 @@
-// v.1.6
+// v.1.7
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
 
-let sliderST = ScrollTrigger.create({
+// slider mask
+gsap
+  .timeline({
+    scrollTrigger: {
+      trigger: ".hero-inner",
+      start: "top top",
+      scrub: true,
+      end: "bottom 95%",
+    },
+  })
+  .to(".slider-mask", {
+    backgroundPosition: "0 45%",
+    duration: 12,
+  });
+
+const clouds = document.querySelectorAll(".c-cloud");
+function showClouds(prep) {
+  gsap.to(clouds, { yPercent: 0, opacity: 0, filter: "blur(8px)" });
+  if (prep) return;
+  gsap.to(clouds, {
+    yPercent: 0,
+    opacity: 1,
+    filter: "blur(0px)",
+    duration: 2,
+  });
+}
+showClouds(true);
+
+// slider component
+ScrollTrigger.create({
   trigger: ".home-slider",
   pin: ".home-slider",
   start: "top 0%",
   end: `+=${window.innerHeight * (data.length - 1)}`, //end of the last slide
+  id: "slider",
   onEnter: () => {
-    // TODO: fix callbacks, bugyy content removal and the likes
-    // console.log("on enter");
+    // remove mask completely
+    gsap.to(".slider-mask", {
+      backgroundPosition: "0 100%",
+      duration: 2,
+    });
+
+    lenis.stop();
+
+    const onScrollEnd = (sketch) => {
+      console.log("Scroll ended after entering the trigger — fires only once");
+      sketch.mountListeners();
+      window.removeEventListener("scrollend", onScrollEnd);
+    };
+
     if (sketch) {
-      lenis.stop();
-      sketch.showContent(0, 1);
-      lenis.start();
+      sketch.current = 0;
+
+      setTimeout(() => {
+        sketch.showContent(0, 1);
+
+        // mount listeners afer initial scroll doesnt get caught
+        setTimeout(() => {
+          sketch.mountListeners();
+          lenis.start();
+        }, 500);
+      }, 100);
     }
   },
   onLeave: () => {
@@ -22,19 +72,25 @@ let sliderST = ScrollTrigger.create({
     if (sketch) {
       sketch.unMountListeners();
     }
+    showClouds();
   },
   onEnterBack: () => {
-    // console.log("on enter back");
     if (sketch) {
       sketch.mountListeners();
     }
+    showClouds(true);
   },
   onLeaveBack: () => {
-    // console.log("on leave back");
     if (sketch) {
-      sketch.removeContent(0, -1);
       sketch.unMountListeners();
+      if (sketch.current !== 0) sketch.slideTo(0);
+      sketch.removeContent(0, -1);
     }
+    // add mask back
+    gsap.to(".slider-mask", {
+      backgroundPosition: "0 45%",
+      duration: 1,
+    });
   },
 });
 
@@ -56,7 +112,6 @@ class Sketch {
     this.clickNext = document.getElementById("slider-next");
     this.clickPrev = document.getElementById("slider-prev");
     this.dots = document.getElementById("slider-dots-group");
-    this.scrolling = false; // to remove
     this.touchStartY = 0;
     this.slider = slider;
     this.container = document
@@ -78,7 +133,13 @@ class Sketch {
     this.current = 0;
     this.textures = [];
     this.paused = true;
-    // Store bound methods as instance properties
+
+    // scrolling
+    this.scrolling = false;
+    this.scrollStop = null;
+
+    // store bound methods as instance properties
+    this.boundScroll = this.scroll.bind(this);
     this.boundTouchStart = this.touchStart.bind(this);
     this.boundTouchMove = this.touchMove.bind(this);
     this.boundKeydown = this.keydown.bind(this);
@@ -90,7 +151,6 @@ class Sketch {
       this.addObjects();
       this.resize();
       this.click();
-      this.scroll();
       this.play();
     });
   }
@@ -116,7 +176,6 @@ class Sketch {
       cb();
       //make the first dot active
       this.activeDot(0, true);
-      this.mountListeners();
     });
   }
 
@@ -135,7 +194,7 @@ class Sketch {
       .fromTo(
         this.content[index].children,
         {
-          yPercent: 40 * direction,
+          yPercent: 20 * direction,
           opacity: 0,
         },
         {
@@ -158,9 +217,9 @@ class Sketch {
       })
       .to(this.content[index].children, {
         opacity: 0,
-        yPercent: -40 * direction,
+        yPercent: -20 * direction,
         duration: 0.5,
-        ease: "easeOut",
+        ease: "easeIn",
       });
   }
 
@@ -252,20 +311,24 @@ class Sketch {
   }
 
   slideTo(nextIndex) {
-    if (this.isRunning) return;
+    if (this.isRunning || nextIndex === this.current) return;
 
     this.isRunning = true;
     let nextTexture = this.textures[nextIndex];
     this.material.uniforms.texture2.value = nextTexture;
 
+    const safeZone = nextIndex === 0 ? 50 : 0;
     // update scroll position
-    lenis.scrollTo(this.container.top + window.innerHeight * nextIndex, {
-      duration: 1,
-      lock: true,
-      onComplete: () => {
-        lenis.stop();
-      },
-    });
+    lenis.scrollTo(
+      this.container.top + window.innerHeight * nextIndex + safeZone,
+      {
+        duration: 1,
+        lock: true,
+        onComplete: () => {
+          lenis.stop();
+        },
+      }
+    );
 
     // update dots
     if (this.current >= 0) this.activeDot(this.current, false);
@@ -275,6 +338,9 @@ class Sketch {
 
     // remove content
     if (this.current >= 0) this.removeContent(this.current, direction);
+
+    // remove cloud if it's not the last one
+    if (nextIndex !== data.length - 1) showClouds(true);
 
     let tl = gsap.timeline({
       onComplete: () => {
@@ -322,25 +388,6 @@ class Sketch {
       this.slideTo((this.current + 1) % this.textures.length);
   }
 
-  scroll() {
-    lenis.on("scroll", ({ scroll }) => {
-      const scrollPos = scroll - this.container.top;
-
-      if (scrollPos <= 0) {
-        if (this.current !== 0) this.slideTo(0);
-      } else {
-        const newIndex = Math.round(scrollPos / window.innerHeight);
-        if (newIndex !== this.current && newIndex < this.images.length) {
-          this.slideTo(newIndex);
-        } else if (
-          newIndex > this.images.length &&
-          this.current !== this.images.length - 1
-        )
-          this.slideTo(this.images.length - 1);
-      }
-    });
-  }
-
   click() {
     this.clickNext.addEventListener("click", () => {
       this.next();
@@ -348,6 +395,27 @@ class Sketch {
     this.clickPrev.addEventListener("click", () => {
       this.prev();
     });
+  }
+
+  scroll(e) {
+    if (this.scrolling) return;
+    this.scrolling = true;
+
+    const scrollThreshold = 50;
+
+    if (!this.scrollStop) this.scrollStop = lenis.scroll;
+
+    const scrollDifference = lenis.scroll - this.scrollStop;
+
+    if (scrollDifference > scrollThreshold) {
+      this.next();
+      this.scrollStop = lenis.scroll;
+    } else if (scrollDifference < -scrollThreshold) {
+      this.prev();
+      this.scrollStop = lenis.scroll;
+    }
+
+    this.scrolling = false; // may need to debounce, we'll see
   }
 
   keydown(e) {
@@ -378,12 +446,17 @@ class Sketch {
   }
 
   mountListeners() {
+    this.cbIndex = lenisCallbacks.length;
+    lenisCallbacks.push(this.boundScroll);
+    // window.addEventListener("scroll", this.boundScroll);
     window.addEventListener("touchstart", this.boundTouchStart);
     window.addEventListener("touchmove", this.boundTouchMove);
     window.addEventListener("keydown", this.boundKeydown);
   }
 
   unMountListeners() {
+    // window.removeEventListener("scroll", this.boundScroll);
+    lenisCallbacks.splice(this.cbIndex, 1);
     window.removeEventListener("touchstart", this.boundTouchStart);
     window.removeEventListener("touchmove", this.boundTouchMove);
     window.removeEventListener("keydown", this.boundKeydown);

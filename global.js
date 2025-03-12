@@ -1,4 +1,4 @@
-// v.1.6
+// v.1.7
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
@@ -12,7 +12,13 @@ function raf(time) {
 }
 requestAnimationFrame(raf);
 
-lenis.on("scroll", ScrollTrigger.update);
+const lenisCallbacks = [ScrollTrigger.update];
+lenis.on("scroll", lenisScroll);
+function lenisScroll(e) {
+  lenisCallbacks.forEach((cb) => {
+    Promise.resolve().then(() => cb(e));
+  });
+}
 
 const updateScroll = () => {
   ScrollTrigger.refresh(true);
@@ -34,28 +40,3 @@ gsap.ticker.lagSmoothing(0);
 window.onbeforeunload = function () {
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 };
-
-class StickySection {
-  constructor(opts) {
-    this.section = this.getNode(opts.section);
-    this.preceeding = this.getNode(opts.preceeding);
-
-    gsap.set(this.section, { y: "-50vh" });
-    this.init();
-  }
-
-  init() {
-    ScrollTrigger.create({
-      trigger: this.preceeding,
-      start: `bottom bottom`,
-      end: "bottom center",
-      pin: this.section,
-      pinSpacing: false,
-    });
-  }
-
-  getNode(arg) {
-    if (arg instanceof Node) return arg;
-    else return document.querySelector(arg);
-  }
-}
