@@ -40,3 +40,7 @@ gsap.ticker.lagSmoothing(0);
 window.onbeforeunload = function () {
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 };
+
+function clamp(val, min, max) {
+  return val <= min ? min : val >= max ? max : val;
+}
