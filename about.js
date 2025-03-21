@@ -1,105 +1,15 @@
-// about.js
+// about.js 1.1
 
 lenis.stop();
 
-function createHero() {
-  const floater = document.querySelector(".color-ball");
-  const container = floater.parentElement;
-
-  const colorArray = [
-    "#fd0", // #fd0
-    "#39FF14", // #39FF14
-    "#2CE6FF", // #2CE6FF
-    "#F838CF", // #F838CF
-    "#FF4500", // #FF4500
-    "#F57134", // #F57134
-    "#0736EE", // #0736EE
-  ];
-
-  function createMask() {
-    const text = document.querySelector(".about-h-inner .h2-web");
-    const mask = document.querySelector("#about-hero-mask");
-    const maskContainer = document.querySelector(".mask-container");
-
-    text.style.opacity = "0";
-
-    const { top } = text.getBoundingClientRect();
-    const section = document
-      .querySelector(".about-h-inner")
-      .getBoundingClientRect();
-
-    const clone = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "text"
-    );
-    clone.textContent = text.textContent;
-    clone.setAttribute("x", "50%");
-    clone.setAttribute("text-anchor", "middle");
-    clone.setAttribute("dominant-baseline", "text-before-edge");
-    clone.setAttribute("y", `${top - section.top}px`);
-
-    mask.appendChild(clone);
-    maskContainer.style.opacity = "1";
-  }
-
-  function createFloatingBalls() {
-    const floaterNum = colorArray.length;
-
-    for (let i = 0; i < floaterNum; i++) {
-      const floaterClone = floater.cloneNode(true);
-      floaterClone.classList.add("clone");
-
-      const size = Math.random() * 20 + 10 + "vw";
-      const ballStyle = {
-        width: size,
-        height: size,
-        backgroundColor: colorArray[i],
-        animationDelay: Math.random() * i + "s",
-        animationDuration: Math.random() * 10 + Math.sqrt(36 * i) + 5 + "s",
-        animationName: i % 2 === 0 ? "float" : "float2",
-      };
-
-      Object.assign(floaterClone.style, ballStyle);
-      container.appendChild(floaterClone);
-    }
-  }
-
-  let mouseX = 0;
-  let mouseY = 0;
-  let animationFrameId;
-
-  function handleMouseMove(e) {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-
-    if (!animationFrameId) {
-      animationFrameId = requestAnimationFrame(() => {
-        updateBallPosition(mouseX, mouseY);
-      });
-    }
-  }
-
-  const ballRect = floater.getBoundingClientRect();
-  const ballX = ballRect.left + ballRect.width / 2;
-  const ballY = ballRect.top + ballRect.height / 2;
-  function updateBallPosition(x, y) {
-    const distX = x - ballX;
-    const distY = y - ballY;
-
-    floater.style.transform = `translate3d(${distX}px, ${distY}px, 0)`;
-
-    animationFrameId = null;
-  }
-
-  createMask();
-  createFloatingBalls();
-
-  container.addEventListener("mousemove", handleMouseMove);
-  // window.addEventListener("resize", createFloatingBalls);
-}
-
 function aboutHeroAnim() {
-  createHero();
+  new TextMask({
+    floater: document.querySelector(".color-ball"),
+    text: document.querySelector(".about-h-inner .h2-web"),
+    mask: document.querySelector("#about-hero-mask"),
+    maskContainer: document.querySelector(".about-h-inner .mask-container"),
+    section: document.querySelector(".about-h-inner"),
+  });
 
   setTimeout(() => {
     lenis.start();
@@ -113,13 +23,13 @@ function aboutHeroAnim() {
         },
       })
       .fromTo(
-        ".about-h-inner svg",
-        { scale: 0.5, yPercent: 0 },
-        { scale: 2, yPercent: 30 }
+        ".about-h-inner svg text",
+        { scale: 0.5, yPercent: 0, transformOrigin: "center center" },
+        { scale: 2, yPercent: 30, transformOrigin: "center center" }
       )
       .fromTo(
         ".colors",
-        { scale: 0.2, autoAlpha: 0.5, yPercent: 0 },
+        { scale: 0.8, scaleY: 0.5, autoAlpha: 0.8, yPercent: 0 }, //0.2
         { scale: 1, autoAlpha: 1, yPercent: 30 },
         "<"
       );
@@ -166,7 +76,6 @@ function aboutAnim() {
     })
     .to(
       aboutMsgSplit.lines,
-      // { color: "white", stagger: 0.5, ease: "Expo.easeOut" },
       { width: "100%", stagger: 0.5, ease: "none" },
 
       "<"
@@ -174,6 +83,7 @@ function aboutAnim() {
 
   const panelGrid = document.querySelector(".panel-grid");
   gsap.set(panelGrid, { opacity: 0 });
+  gsap.set(".panel-msg", { zIndex: 1 });
 
   gsap
     .timeline({
@@ -228,7 +138,6 @@ function aboutAnim() {
     scale: 2,
     transformOrigin: "top center",
     opacity: 0,
-    zIndex: -1,
     position: "relative",
   });
 
@@ -359,7 +268,7 @@ function stickySun() {
   const splitLines = new SplitText(".bright-inner .h1-web", {
     type: "lines,words",
   });
-  console.log("splitLines", splitLines);
+
   const splitPhrase = splitLines.lines[1].children;
 
   gsap
