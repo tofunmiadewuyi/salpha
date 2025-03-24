@@ -54,7 +54,7 @@ let currentX = 0,
   currentY = 0;
 let animationFrameId = null;
 
-document.addEventListener("mousemove", function (e) {
+svg.addEventListener("mousemove", function (e) {
   cursorX = e.clientX;
   cursorY = e.clientY;
   updatePosition(cursorX, cursorY);
