@@ -1,6 +1,6 @@
-// v.1.7
+// v.1.8
 
-const sNumbers = document.querySelector(".s-numbers_inner");
+const sNumbers = document.querySelector(".numbers-content");
 const sNumbersTexts = sNumbers.querySelectorAll("h1");
 const svg = document.querySelector(".s-numbers > svg");
 const mask = document.querySelector("#numbers-mask");
