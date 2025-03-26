@@ -1,16 +1,16 @@
-// v.1.7
+// home v.1.9
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
 };
 
 const sunEl = document.querySelector(".c-sun");
-const heroSection = document.querySelector('.section[section="hero"]');
-const ctaSection = document.querySelector('.section[section="cta"]');
-
 sunEl.style.opacity = "1";
 lenis.stop();
-introAnimation();
+
+document.addEventListener("DOMContentLoaded", () => {
+  introAnimation();
+});
 
 function introAnimation() {
   // intro animation (eclipse)
@@ -25,9 +25,12 @@ function introAnimation() {
         ease: "power2.inOut",
         delay: 1.5,
         onComplete: () => {
+          gsap.set(sunEl, { marginBottom: 0, yPercent: 50 });
           lenis.start();
           heroAnimation();
           ctaAnimations();
+          homeMask();
+          dgCards();
         },
       }
     )
@@ -86,7 +89,7 @@ function heroAnimation() {
       },
     })
     .to(sunEl, {
-      marginBottom: "125px",
+      yPercent: -16,
       scale: 0.23,
       ease: "none",
     })
@@ -101,13 +104,14 @@ function ctaAnimations() {
   gsap
     .timeline({
       scrollTrigger: {
-        trigger: ctaSection,
+        trigger: '.section[section="cta"]',
         start: "top center",
-        end: `+=${window.innerHeight / 2}`,
-        scrub: 1,
+        end: "top top",
+        // end: `+=${window.innerHeight / 2}`,
+        scrub: true,
       },
     })
-    .to(sunEl, { marginBottom: "-375px", opacity: 1, scale: 1.25 });
+    .to(sunEl, { yPercent: 50, opacity: 1, scale: 1.25 });
 
   const ctaContent = document.querySelectorAll(".cta-content");
 
@@ -120,128 +124,90 @@ function ctaAnimations() {
   );
 
   // show content 1
-  gsap.fromTo(
-    content1,
-    { opacity: 0, yPercent: (i) => i * 20 },
-    {
-      scrollTrigger: {
-        trigger: ctaContent[0],
-        start: "top center",
-        end: "bottom center",
-        scrub: 1,
-      },
-      opacity: 1,
-      yPercent: 0,
-      stagger: 0.12,
-      ease: "power2.out",
-    }
-  );
-
-  // move up
   gsap
     .timeline({
       scrollTrigger: {
         trigger: ctaContent[0],
-        start: "bottom 60%",
-        end: "bottom+=200 top",
-        scrub: true,
+        start: "top 70%",
+        end: "bottom top",
+        scrub: 1,
       },
     })
+    .fromTo(
+      content1,
+      { opacity: 0, yPercent: (i) => i * 20 },
+      {
+        opacity: 1,
+        yPercent: 0,
+        stagger: 0.12,
+        ease: "power2.out",
+      }
+    )
     .to(sunEl, {
-      marginBottom: "250px",
+      yPercent: -35,
       scale: 0.19,
       filter: "blur(0px)",
+      duration: 2,
     });
 
   // show content 2
-  gsap.fromTo(
-    ctaContent[1].querySelectorAll("*"),
-    { opacity: 0, yPercent: (i) => i * 20 },
-    {
-      scrollTrigger: {
-        trigger: ctaContent[1],
-        start: "top+=20 bottom",
-        end: "bottom bottom",
-        scrub: 1,
-      },
-      opacity: 1,
-      yPercent: 0,
-      stagger: 0.12,
-      ease: "power2.out",
-    }
-  );
-
-  //move down between words
   const ctaSplitGroup = new SplitText(".cta-split_group", { type: "words" });
-  gsap
+
+  const tl = gsap
     .timeline({
       scrollTrigger: {
-        trigger: ctaContent[1],
-        start: "top center",
+        trigger: ctaContent[1].querySelector("h1"),
+        start: "top bottom",
+        end: "bottom 60%",
         scrub: true,
-        end: "center center",
       },
     })
-    .to(sunEl, {
-      marginBottom: "0px",
-      ease: "none",
-    })
-    .to(".sun-el", { scale: 0.6 }, "<")
-    .to(".sun-glow", { opacity: 0.6, filter: "blur(120px)" }, "<")
-    .to(ctaSplitGroup.words[0], { xPercent: -45, ease: "none" }, "<")
-    .to(ctaSplitGroup.words[1], { xPercent: 45, ease: "none" }, "<");
+    .fromTo(
+      ctaContent[1].querySelectorAll("*"),
+      { opacity: 0, yPercent: (i) => i * 20 },
+      { opacity: 1, yPercent: 0, ease: "none", duration: 1 }
+    )
+    .to(ctaSplitGroup.words[0], { xPercent: -45, ease: "none", duration: 1 })
+    .to(
+      ctaSplitGroup.words[1],
+      { xPercent: 45, ease: "none", duration: 1 },
+      "<"
+    )
+    .to(sunEl, { yPercent: 6, y: 0, ease: "none", duration: 1 }, "<")
+    .to(".sun-el", { scale: 0.6, duration: 1 }, "<")
+    .to(
+      ".sun-glow",
+      { opacity: 0.6, filter: "blur(120px)", ease: "none" },
+      "<"
+    );
 
-  //follow content
+  // follow content
   gsap
     .timeline({
       scrollTrigger: {
-        trigger: ctaContent[1],
-        start: "center center",
+        trigger: ctaContent[1].querySelector("h1"),
+        start: "bottom 58.5%",
         end: "bottom top",
         scrub: true,
       },
     })
-    .to(sunEl, {
-      marginBottom: "510px",
-      ease: "none",
-      duration: 2.5,
-    })
-    .to(sunEl, { opacity: 0 });
+    .to(sunEl, { yPercent: -60, ease: "none" });
 }
 
 // discover cards
-const discoverCards = document.querySelectorAll(".dg-card");
+function dgCards() {
+  const discoverCards = document.querySelectorAll(".dg-card");
 
-function flip(e) {
-  const target = e.target;
+  function flip(e) {
+    const target = e.target;
 
-  const card = target.closest(".dg-card");
+    const card = target.closest(".dg-card");
 
-  if (card) {
-    card.classList.toggle("cc-flip");
+    if (card) {
+      card.classList.toggle("cc-flip");
+    }
   }
+
+  discoverCards.forEach((el) => el.addEventListener("mouseenter", flip));
+  discoverCards.forEach((el) => el.addEventListener("mouseleave", flip));
 }
-
-discoverCards.forEach((el) => el.addEventListener("mouseenter", flip));
-discoverCards.forEach((el) => el.addEventListener("mouseleave", flip));
-
-//sticky sections
-const sections = document.querySelectorAll(
-  '.page-wrapper > *:not([section="hero"]):not([section="cta"]):not(.c-nav):not(.c-footer)'
-);
-
-sections.forEach((section, i) => {
-  section.style.zIndex = sections.length - i;
-});
-
-const allChildren = Array.from(
-  document.querySelectorAll(".page-wrapper > *:not(.c-nav)")
-);
-const selectedChildren = new Set(sections);
-const excludedChildren = allChildren.filter(
-  (child) => !selectedChildren.has(child)
-);
-
-excludedChildren.forEach((child) => {
-  child.style.zIndex = sections.length;
-});

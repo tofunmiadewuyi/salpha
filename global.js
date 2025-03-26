@@ -1,4 +1,4 @@
-// v.1.8 barba
+// global v.1.9
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
@@ -37,6 +37,18 @@ gsap.ticker.add((time) => {
 
 gsap.ticker.lagSmoothing(0);
 
+window.onbeforeunload = function () {
+  ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+};
+
+function clamp(val, min, max) {
+  return val <= min ? min : val >= max ? max : val;
+}
+
+/**********************************************************************
+ * page transitions
+ ***********************************************************************/
+const supportPages = typeof pageFunctions !== "undefined" ? pageFunctions : {};
 barba.init({
   transitions: [
     {
@@ -52,17 +64,86 @@ barba.init({
         });
       },
     },
+    {
+      // uses data & fns defined in the support file
+      name: "support-transition",
+      from: { namespace: Object.keys(supportPages) },
+      to: { namespace: Object.keys(supportPages) },
+
+      beforeLeave(data) {
+        return supportPages[data.current.namespace](false);
+      },
+
+      leave(data) {
+        return gsap.to(
+          data.current.container.querySelector(".supportpage-body"),
+          { opacity: 0, scale: 0.3, y: 100 }
+        );
+      },
+
+      enter(data) {
+        return gsap.from(
+          data.next.container.querySelector(".supportpage-body"),
+          { opacity: 0, scale: 0.3, y: 100 }
+        );
+      },
+
+      afterEnter(data) {
+        return supportPages[data.next.namespace](true);
+      },
+    },
   ],
 });
 
-window.onbeforeunload = function () {
-  ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+/**********************************************************************
+ * nav
+ ***********************************************************************/
+const navWrapper = document.querySelector(".c-nav");
+const nav = document.querySelector(".nav");
+const navDropdowns = Array.from(
+  document.querySelectorAll(".nav-item[dropdown]")
+);
+
+const closeNavDropdown = (item) => {
+  item.classList.remove("cc-active");
+  const dropdown = item.querySelector(".nav-dropdown");
+  if (dropdown) dropdown.classList.remove("cc-active");
 };
 
-function clamp(val, min, max) {
-  return val <= min ? min : val >= max ? max : val;
-}
+navDropdowns.forEach((item) => {
+  item.addEventListener("click", () => {
+    navDropdowns
+      .filter((dd) => dd !== item)
+      .forEach((dd) => closeNavDropdown(dd));
+    item.classList.toggle("cc-active");
+    const dropdown = item.querySelector(".nav-dropdown");
+    if (dropdown) dropdown.classList.toggle("cc-active");
+  });
+});
 
+navWrapper.addEventListener("mouseleave", () => {
+  navDropdowns.forEach((item) => {
+    closeNavDropdown(item);
+  });
+  nav.classList.remove("cc-active");
+});
+
+const menuSafezone = document.querySelector(".control-safezone.cc-menu");
+menuSafezone.addEventListener("mouseenter", () => {
+  nav.classList.add("cc-active");
+});
+menuSafezone.addEventListener("mouseleave", () => {
+  nav.classList.remove("cc-active");
+});
+
+const navMenuIcon = document.querySelector(".nav-btn:has(.nav-menu_icon)");
+navMenuIcon.addEventListener("click", () => {
+  nav.classList.add("cc-active");
+});
+
+/**********************************************************************
+ * masks
+ ***********************************************************************/
 class TextMask {
   constructor(opts) {
     this.floater = opts.floater;
