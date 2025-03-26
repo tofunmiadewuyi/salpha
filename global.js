@@ -48,7 +48,13 @@ function clamp(val, min, max) {
 /**********************************************************************
  * page transitions
  ***********************************************************************/
-const supportPages = typeof pageFunctions !== "undefined" ? pageFunctions : {};
+
+const supportPages = {
+  faqs: () => {},
+  "contact-us": () => {},
+  "locate-us": () => {},
+};
+
 barba.init({
   transitions: [
     {

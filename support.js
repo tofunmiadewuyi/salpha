@@ -40,13 +40,13 @@ function contactPage(enter) {
 
 function locatePage(enter) {}
 
-const pageFunctions = {
+Object.assign(supportPages, {
   faqs: faqsPage,
   "contact-us": contactPage,
   "locate-us": locatePage,
-};
+});
 
 const namespace = document.querySelector('[data-barba="container"').dataset
   .barbaNamespace;
 
-pageFunctions[namespace](true);
+supportPages[namespace](true);

@@ -1,4 +1,4 @@
-// v.1.7
+// home-slider v.1.7
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
