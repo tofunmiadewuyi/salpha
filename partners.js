@@ -1,4 +1,4 @@
-// partners.js
+// partners.js v.1.9
 
 function portal() {
   const canvas = document.getElementById("portal");
@@ -70,22 +70,22 @@ function partnersHero() {
       gsap.to(card, {
         css: {
           transform: `rotateY(${
-            transforms[i].y + yPercent * 20
+            transforms[i].y + xPercent * 16 // x- movement
           }deg) translateZ(0px)`,
         },
         ease: "Expo.easeOut",
-        duration: 10,
+        duration: 2.5,
         overwrite: "all",
       });
 
       gsap.to(transformCards[i], {
         css: {
           transform: `rotateX(${
-            transforms[i].x + xPercent * 20
+            transforms[i].x + yPercent * -12
           }deg) translateZ(0px)`,
         },
         ease: "Expo.easeOut",
-        duration: 10,
+        duration: 2.5,
         overwrite: "all",
       });
     });
