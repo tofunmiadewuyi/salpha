@@ -1,5 +1,4 @@
-// global v.1.9
-
+// global v.1.10
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
@@ -145,6 +144,10 @@ menuSafezone.addEventListener("mouseleave", () => {
 const navMenuIcon = document.querySelector(".nav-btn:has(.nav-menu_icon)");
 navMenuIcon.addEventListener("click", () => {
   nav.classList.add("cc-active");
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  lenis.resize();
 });
 
 /**********************************************************************

@@ -1,4 +1,4 @@
-// partners.js v.1.9
+// partners.js v.1.10
 
 function portal() {
   const canvas = document.getElementById("portal");

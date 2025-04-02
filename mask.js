@@ -1,8 +1,8 @@
-// home-mask v.1.9
+// home-mask v.1.10
 
 function homeMask() {
   const sNumbers = document.querySelector(".numbers-content");
-  const sNumbersTexts = sNumbers.querySelectorAll("h1");
+  const sNumbersTexts = sNumbers.querySelectorAll(".heading-1 > div");
   const svg = document.querySelector(".numbers-inner svg");
   const mask = document.querySelector("#numbers-mask");
   const lines = document.querySelectorAll(".numbers-divider");

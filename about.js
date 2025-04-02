@@ -1,4 +1,4 @@
-// about.js 1.1
+// about.js 1.10
 
 lenis.stop();
 
@@ -18,21 +18,24 @@ function aboutHeroAnim() {
         scrollTrigger: {
           trigger: ".about-hero",
           start: "top top",
-          end: "bottom center",
+          end: "bottom top",
+          markers: true,
           scrub: true,
         },
       })
       .fromTo(
         ".about-h-inner svg text",
-        { scale: 0.5, yPercent: 0, transformOrigin: "center center" },
-        { scale: 2, yPercent: 30, transformOrigin: "center center" }
+        { scale: 0.5, transformOrigin: "center center" },
+        { scale: 4, transformOrigin: "center center" }
       )
       .fromTo(
         ".colors",
-        { scale: 0.8, scaleY: 0.5, autoAlpha: 0.8, yPercent: 0 }, //0.2
-        { scale: 1, autoAlpha: 1, yPercent: 30 },
+        { scale: 0.8, scaleY: 0.5, autoAlpha: 0.8 }, //0.2
+        { scale: 1, autoAlpha: 1 },
         "<"
-      );
+      )
+      .to(".section:has(.about-hero) .about-h-inner", { yPercent: 40 }, "<")
+      .to(".section:has(.about-hero)", { opacity: 0 });
   }, 1000);
 }
 
