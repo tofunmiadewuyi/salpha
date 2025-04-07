@@ -1,4 +1,4 @@
-// home v.1.9
+// home v.1.10
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
@@ -6,6 +6,7 @@ window.onbeforeunload = function () {
 
 const sunEl = document.querySelector(".c-sun");
 sunEl.style.opacity = "1";
+sunEl.style.marginBottom = "unset";
 lenis.stop();
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,14 +19,15 @@ function introAnimation() {
     .timeline()
     .fromTo(
       sunEl,
-      { marginBottom: "0px" },
+      { yPercent: 0 },
       {
-        marginBottom: "-375px",
+        // marginBottom: "-375px",
+        yPercent: 50,
         duration: 1.5,
         ease: "power2.inOut",
         delay: 1.5,
         onComplete: () => {
-          gsap.set(sunEl, { marginBottom: 0, yPercent: 50 });
+          // gsap.set(sunEl, { yPercent: 50 });
           lenis.start();
           heroAnimation();
           ctaAnimations();
@@ -156,7 +158,7 @@ function ctaAnimations() {
   const tl = gsap
     .timeline({
       scrollTrigger: {
-        trigger: ctaContent[1].querySelector("h1"),
+        trigger: ctaContent[1].querySelector(".heading-1 > div"),
         start: "top bottom",
         end: "bottom 60%",
         scrub: true,
@@ -185,7 +187,7 @@ function ctaAnimations() {
   gsap
     .timeline({
       scrollTrigger: {
-        trigger: ctaContent[1].querySelector("h1"),
+        trigger: ctaContent[1].querySelector(".heading-1 > div"),
         start: "bottom 58.5%",
         end: "bottom top",
         scrub: true,
