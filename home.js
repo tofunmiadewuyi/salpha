@@ -1,13 +1,15 @@
-// home v.1.10
+// home v.1.11
 
 window.onbeforeunload = function () {
   window.scrollTo(0, 0);
 };
 
-const sunEl = document.querySelector(".c-sun");
-sunEl.style.opacity = "1";
-sunEl.style.marginBottom = "unset";
-lenis.stop();
+window.stopLenisOnInit = true;
+
+const sunEl = document.querySelector("#hero-sun");
+const ctaSunEl = document.querySelector("#cta-sun");
+
+gsap.set(sunEl, { opacity: 1 });
 
 document.addEventListener("DOMContentLoaded", () => {
   introAnimation();
@@ -19,20 +21,15 @@ function introAnimation() {
     .timeline()
     .fromTo(
       sunEl,
-      { yPercent: 0 },
+      { y: 0 },
       {
-        // marginBottom: "-375px",
-        yPercent: 50,
+        y: window.innerHeight * 0.55,
         duration: 1.5,
         ease: "power2.inOut",
         delay: 1.5,
         onComplete: () => {
-          // gsap.set(sunEl, { yPercent: 50 });
-          lenis.start();
-          heroAnimation();
-          ctaAnimations();
-          homeMask();
-          dgCards();
+          window.lenis.start();
+          initPage();
         },
       }
     )
@@ -86,35 +83,26 @@ function heroAnimation() {
         },
       },
       onComplete: () => {
-        gsap.set(sunEl, { marginBottom: "65px" });
         gsap.set(".sun-el, .sun-glow", { backgroundColor: "#ffdd02" });
       },
     })
     .to(sunEl, {
-      yPercent: -16,
+      y: window.innerHeight * 0.95,
       scale: 0.23,
       ease: "none",
     })
-    .to(".sun-el, .sun-glow", { backgroundColor: "#FFBF5A" }, "<");
+    .to(
+      "#hero-sun .sun-el, #hero-sun .sun-glow",
+      { backgroundColor: "#FFBF5A" },
+      "<"
+    );
 }
 
 function ctaAnimations() {
   new SplitText(".cta-content > h1", { type: "lines" });
   new SplitText(".cta-content > .cta-content_body > p", { type: "lines" });
 
-  //show sun
-  gsap
-    .timeline({
-      scrollTrigger: {
-        trigger: '.section[section="cta"]',
-        start: "top center",
-        end: "top top",
-        // end: `+=${window.innerHeight / 2}`,
-        scrub: true,
-      },
-    })
-    .to(sunEl, { yPercent: 50, opacity: 1, scale: 1.25 });
-
+  const tl = gsap.timeline();
   const ctaContent = document.querySelectorAll(".cta-content");
 
   const content1 = Array.from(ctaContent[0].querySelectorAll("*")).filter(
@@ -125,14 +113,16 @@ function ctaAnimations() {
     }
   );
 
+  const { width: sunWidth } = ctaSunEl.getBoundingClientRect();
+
   // show content 1
-  gsap
+  const content1Anim = gsap
     .timeline({
       scrollTrigger: {
         trigger: ctaContent[0],
-        start: "top 70%",
+        start: "top bottom",
         end: "bottom top",
-        scrub: 1,
+        scrub: true,
       },
     })
     .fromTo(
@@ -145,17 +135,45 @@ function ctaAnimations() {
         ease: "power2.out",
       }
     )
-    .to(sunEl, {
-      yPercent: -35,
-      scale: 0.19,
+    .fromTo(
+      ctaSunEl,
+      {
+        yPercent: -200,
+        opacity: 0,
+        filter: "blur(80px)",
+        width: sunWidth * 0.1,
+        height: sunWidth * 0.1,
+      },
+      {
+        yPercent: -50,
+        opacity: 1,
+        width: sunWidth * 1.25,
+        height: sunWidth * 1.25,
+      },
+      "<"
+    )
+    .to(ctaSunEl, {
+      yPercent: 0,
+      width: sunWidth * 0.4,
+      height: sunWidth * 0.4,
       filter: "blur(0px)",
       duration: 2,
-    });
+    })
+    .to("#cta-sun .sun-el", { scale: 0.6 }, "<");
+
+  tl.add(content1Anim);
+
+  const ctaSplitGroup = new SplitText(".cta-split_group", { type: "words" });
+  const { bottom: sectionBottom } = document
+    .querySelector(".cta-spacing")
+    .getBoundingClientRect();
+  const { top: splitTop, height: splitHeight } =
+    ctaSplitGroup.words[0].getBoundingClientRect();
+  const dist =
+    splitTop + splitHeight * 0.35 - sectionBottom + sunWidth * 0.25 * 0.5;
 
   // show content 2
-  const ctaSplitGroup = new SplitText(".cta-split_group", { type: "words" });
-
-  const tl = gsap
+  const content2Anim = gsap
     .timeline({
       scrollTrigger: {
         trigger: ctaContent[1].querySelector(".heading-1 > div"),
@@ -167,36 +185,26 @@ function ctaAnimations() {
     .fromTo(
       ctaContent[1].querySelectorAll("*"),
       { opacity: 0, yPercent: (i) => i * 20 },
-      { opacity: 1, yPercent: 0, ease: "none", duration: 1 }
+      { opacity: 1, yPercent: 0 }
     )
     .to(ctaSplitGroup.words[0], { xPercent: -45, ease: "none", duration: 1 })
+    .to(ctaSplitGroup.words[1], { xPercent: 45, duration: 1 }, "<")
+    .to("#cta-sun  .sun-glow", { opacity: 0.6, filter: "blur(120px)" }, "<")
     .to(
-      ctaSplitGroup.words[1],
-      { xPercent: 45, ease: "none", duration: 1 },
-      "<"
-    )
-    .to(sunEl, { yPercent: 6, y: 0, ease: "none", duration: 1 }, "<")
-    .to(".sun-el", { scale: 0.6, duration: 1 }, "<")
-    .to(
-      ".sun-glow",
-      { opacity: 0.6, filter: "blur(120px)", ease: "none" },
+      ctaSunEl,
+      {
+        width: sunWidth * 0.25,
+        height: sunWidth * 0.25,
+        y: dist,
+        ease: "none",
+        duration: 1,
+      },
       "<"
     );
 
-  // follow content
-  gsap
-    .timeline({
-      scrollTrigger: {
-        trigger: ctaContent[1].querySelector(".heading-1 > div"),
-        start: "bottom 58.5%",
-        end: "bottom top",
-        scrub: true,
-      },
-    })
-    .to(sunEl, { yPercent: -60, ease: "none" });
+  tl.add(content2Anim);
 }
 
-// discover cards
 function dgCards() {
   const discoverCards = document.querySelectorAll(".dg-card");
 
@@ -212,4 +220,28 @@ function dgCards() {
 
   discoverCards.forEach((el) => el.addEventListener("mouseenter", flip));
   discoverCards.forEach((el) => el.addEventListener("mouseleave", flip));
+}
+
+function footerSun() {
+  gsap.fromTo(
+    ".footer-sun",
+    { yPercent: 0 },
+    {
+      yPercent: 75,
+      scrollTrigger: {
+        trigger: ".s-ahead",
+        start: "top center",
+        end: "bottom bottom",
+        scrub: 2,
+      },
+    }
+  );
+}
+
+function initPage() {
+  heroAnimation();
+  ctaAnimations();
+  homeMask();
+  dgCards();
+  footerSun();
 }

@@ -1,9 +1,8 @@
-// home-mask v.1.10
+// home-mask v.1.11
 
 function homeMask() {
   const sNumbers = document.querySelector(".numbers-content");
   const sNumbersTexts = sNumbers.querySelectorAll(".heading-1 > div");
-  const svg = document.querySelector(".numbers-inner svg");
   const mask = document.querySelector("#numbers-mask");
   const lines = document.querySelectorAll(".numbers-divider");
   const maskContainer = document.querySelector(".mask-container");
@@ -95,10 +94,10 @@ function homeMask() {
   const minisunSpread = document.querySelector(".minisun-spread");
   const glowSpread = document.querySelector(".glow-spread");
   function updatePosition(x, y) {
-    const { top, bottom, height } = sNumbers.getBoundingClientRect();
+    let { top, bottom, height } = sNumbers.getBoundingClientRect();
 
     let half = minisunSpread.offsetHeight / 2;
-
+    bottom = isMobile ? bottom : bottom - 60;
     updateMSSpread(y, top, bottom, half);
 
     // y = y < top + half ? top + half : y > bottom - half ? bottom - half : y;
@@ -136,9 +135,9 @@ function homeMask() {
     gsap.to(minisunSpread, {
       yPercent: ms,
       opacity: op,
-      // duration: 0.3,
       overwrite: "auto",
     });
+    gsap.to(glowSpread, { opacity: op, overwrite: "auto" });
   }
 
   const maskScroll = () => {
@@ -164,9 +163,6 @@ function homeMask() {
     onLeaveBack: () => {
       gsap.set([glow, cursor], { opacity: 0 });
     },
-    onComplete: () => {
-      lenis.resize();
-    },
   });
 
   const removeAppendedChildren = () => {
@@ -184,10 +180,16 @@ function homeMask() {
   createTextClones();
   createLineClones();
 
+  setTimeout(() => {
+    lenis.resize();
+    console.log("lenis resize");
+  }, 3000);
+
   window.addEventListener("resize", () => {
     removeAppendedChildren();
     sNumberBounds = sNumbers.getBoundingClientRect();
     createTextClones();
     createLineClones();
+    setTimeout(() => lenis.resize(), 1000);
   });
 }

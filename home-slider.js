@@ -1,4 +1,4 @@
-// home-slider v.1.7
+// home-slider v.1.11
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -44,7 +44,9 @@ let sliderTrigger = ScrollTrigger.create({
       duration: 2,
     });
 
-    lenis.stop();
+    if (window.lenis) {
+      window.lenis.stop();
+    }
 
     const onScrollEnd = (sketch) => {
       console.log("Scroll ended after entering the trigger — fires only once");
@@ -449,14 +451,12 @@ class Sketch {
   mountListeners() {
     this.cbIndex = lenisCallbacks.length;
     lenisCallbacks.push(this.boundScroll);
-    // window.addEventListener("scroll", this.boundScroll);
     window.addEventListener("touchstart", this.boundTouchStart);
     window.addEventListener("touchmove", this.boundTouchMove);
     window.addEventListener("keydown", this.boundKeydown);
   }
 
   unMountListeners() {
-    // window.removeEventListener("scroll", this.boundScroll);
     lenisCallbacks.splice(this.cbIndex, 1);
     window.removeEventListener("touchstart", this.boundTouchStart);
     window.removeEventListener("touchmove", this.boundTouchMove);

@@ -1,154 +1,187 @@
-// global v.1.10
+// global v.1.11
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
-const lenis = new Lenis({
-  duration: 1.25,
-});
-function raf(time) {
-  lenis.raf(time);
-  requestAnimationFrame(raf);
-}
-requestAnimationFrame(raf);
+window.lenisCallbacks = [];
 
-const lenisCallbacks = [ScrollTrigger.update];
-lenis.on("scroll", lenisScroll);
-function lenisScroll(e) {
-  lenisCallbacks.forEach((cb) => {
-    Promise.resolve().then(() => cb(e));
+document.addEventListener("DOMContentLoaded", globalPageInit);
+
+function globalPageInit() {
+  initLenis();
+  initNavigation();
+  initFooter();
+
+  window.onbeforeunload = function () {
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    if (window.lenis) {
+      window.lenis.destroy();
+      window.lenis = null;
+    }
+  };
+
+  setTimeout(() => {
+    // const height = Math.max(
+    //   document.body.scrollHeight,
+    //   document.body.offsetHeight,
+    //   document.documentElement.clientHeight,
+    //   document.documentElement.scrollHeight,
+    //   document.documentElement.offsetHeight
+    // );
+    // document.documentElement.style.minHeight = height + "px";
+
+    if (window.lenis) {
+      window.lenis.resize();
+    }
+  }, 1000);
+}
+
+/**********************************************************************
+ * lenis
+ ***********************************************************************/
+function initLenis() {
+  if (typeof Lenis === "undefined") {
+    console.error(
+      "Lenis library not loaded. Make sure it's included before this script."
+    );
+    return;
+  }
+
+  if (window.lenis) {
+    console.log("Lenis already initialized");
+    return window.lenis;
+  }
+
+  window.lenis = new Lenis({
+    duration: 1.25,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    direction: "vertical",
+    gestureDirection: "vertical",
+    smooth: true,
+    smoothTouch: false,
+    touchMultiplier: 2,
+  });
+
+  if (window.stopLenisOnInit === true) {
+    window.lenis.stop();
+  }
+
+  window.lenisCallbacks.push(ScrollTrigger.update);
+
+  function lenisScroll(e) {
+    if (window.lenisCallbacks && window.lenisCallbacks.length) {
+      window.lenisCallbacks.forEach((cb) => {
+        if (typeof cb === "function") {
+          Promise.resolve().then(() => cb(e));
+        }
+      });
+    }
+  }
+
+  window.lenis.off("scroll", lenisScroll);
+  window.lenis.on("scroll", lenisScroll);
+
+  gsap.ticker.add((time) => {
+    window.lenis.raf(time * 1000);
+  });
+
+  gsap.ticker.lagSmoothing(0);
+
+  window.updateScroll = () => {
+    ScrollTrigger.refresh(true);
+    checkIsMobile();
+    setTimeout(() => {
+      lenis.resize();
+    }, 1000);
+  };
+
+  window.removeEventListener("resize", window.updateScroll);
+  window.addEventListener("resize", window.updateScroll);
+
+  return window.lenis;
+}
+
+/**********************************************************************
+ * nav
+ ***********************************************************************/
+function initNavigation() {
+  const navWrapper = document.querySelector(".c-nav");
+  const nav = document.querySelector(".nav");
+  const navDropdowns = Array.from(
+    document.querySelectorAll(".nav-item[dropdown]")
+  );
+
+  const closeNavDropdown = (item) => {
+    item.classList.remove("cc-active");
+    const dropdown = item.querySelector(".nav-dropdown");
+    if (dropdown) dropdown.classList.remove("cc-active");
+  };
+
+  navDropdowns.forEach((item) => {
+    item.addEventListener("click", () => {
+      navDropdowns
+        .filter((dd) => dd !== item)
+        .forEach((dd) => closeNavDropdown(dd));
+      item.classList.toggle("cc-active");
+      const dropdown = item.querySelector(".nav-dropdown");
+      if (dropdown) dropdown.classList.toggle("cc-active");
+    });
+  });
+
+  navWrapper.addEventListener("mouseleave", () => {
+    navDropdowns.forEach((item) => {
+      closeNavDropdown(item);
+    });
+    nav.classList.remove("cc-active");
+  });
+
+  const menuSafezone = document.querySelector(".control-safezone.cc-menu");
+  menuSafezone.addEventListener("mouseenter", () => {
+    nav.classList.add("cc-active");
+  });
+  menuSafezone.addEventListener("mouseleave", () => {
+    nav.classList.remove("cc-active");
+  });
+
+  const navMenuIcon = document.querySelector(".nav-btn:has(.nav-menu_icon)");
+  navMenuIcon.addEventListener("click", () => {
+    nav.classList.add("cc-active");
   });
 }
 
-const updateScroll = () => {
-  ScrollTrigger.refresh(true);
-  setTimeout(() => {
-    lenis.resize();
-  }, 1000);
-};
+/**********************************************************************
+ * footer
+ ***********************************************************************/
 
-window.addEventListener("resize", () => {
-  updateScroll();
-});
+function initFooter() {
+  const colors = document.querySelector("#footer-colors");
+  colors.style.backgroundColor = "black";
+  colors.style.bottom = "10px";
 
-gsap.ticker.add((time) => {
-  lenis.raf(time * 1000);
-});
+  new TextMask({
+    floater: document.querySelector("#footer-ball"),
+    text: document.querySelector("#salpha-logo"),
+    mask: document.querySelector("#footer-mask"),
+    maskContainer: document.querySelector(".footer-logo .mask-container"),
+    section: document.querySelector("#footer-logo-section"),
+  });
+}
 
-gsap.ticker.lagSmoothing(0);
-
-window.onbeforeunload = function () {
-  ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-};
+/**********************************************************************
+ * helpers
+ ***********************************************************************/
 
 function clamp(val, min, max) {
   return val <= min ? min : val >= max ? max : val;
 }
 
-/**********************************************************************
- * page transitions
- ***********************************************************************/
-
-const supportPages = {
-  faqs: () => {},
-  "contact-us": () => {},
-  "locate-us": () => {},
-};
-
-barba.init({
-  transitions: [
-    {
-      name: "opacity-transition",
-      leave(data) {
-        return gsap.to(data.current.container, {
-          opacity: 0,
-        });
-      },
-      enter(data) {
-        return gsap.from(data.next.container, {
-          opacity: 0,
-        });
-      },
-    },
-    {
-      // uses data & fns defined in the support file
-      name: "support-transition",
-      from: { namespace: Object.keys(supportPages) },
-      to: { namespace: Object.keys(supportPages) },
-
-      beforeLeave(data) {
-        return supportPages[data.current.namespace](false);
-      },
-
-      leave(data) {
-        return gsap.to(
-          data.current.container.querySelector(".supportpage-body"),
-          { opacity: 0, scale: 0.3, y: 100 }
-        );
-      },
-
-      enter(data) {
-        return gsap.from(
-          data.next.container.querySelector(".supportpage-body"),
-          { opacity: 0, scale: 0.3, y: 100 }
-        );
-      },
-
-      afterEnter(data) {
-        return supportPages[data.next.namespace](true);
-      },
-    },
-  ],
-});
-
-/**********************************************************************
- * nav
- ***********************************************************************/
-const navWrapper = document.querySelector(".c-nav");
-const nav = document.querySelector(".nav");
-const navDropdowns = Array.from(
-  document.querySelectorAll(".nav-item[dropdown]")
-);
-
-const closeNavDropdown = (item) => {
-  item.classList.remove("cc-active");
-  const dropdown = item.querySelector(".nav-dropdown");
-  if (dropdown) dropdown.classList.remove("cc-active");
-};
-
-navDropdowns.forEach((item) => {
-  item.addEventListener("click", () => {
-    navDropdowns
-      .filter((dd) => dd !== item)
-      .forEach((dd) => closeNavDropdown(dd));
-    item.classList.toggle("cc-active");
-    const dropdown = item.querySelector(".nav-dropdown");
-    if (dropdown) dropdown.classList.toggle("cc-active");
-  });
-});
-
-navWrapper.addEventListener("mouseleave", () => {
-  navDropdowns.forEach((item) => {
-    closeNavDropdown(item);
-  });
-  nav.classList.remove("cc-active");
-});
-
-const menuSafezone = document.querySelector(".control-safezone.cc-menu");
-menuSafezone.addEventListener("mouseenter", () => {
-  nav.classList.add("cc-active");
-});
-menuSafezone.addEventListener("mouseleave", () => {
-  nav.classList.remove("cc-active");
-});
-
-const navMenuIcon = document.querySelector(".nav-btn:has(.nav-menu_icon)");
-navMenuIcon.addEventListener("click", () => {
-  nav.classList.add("cc-active");
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  lenis.resize();
-});
+window.isMobile = false;
+function checkIsMobile() {
+  if (window.innerWidth < 767) {
+    window.isMobile = true;
+  } else {
+    window.isMobile = false;
+  }
+}
 
 /**********************************************************************
  * masks
@@ -156,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 class TextMask {
   constructor(opts) {
     this.floater = opts.floater;
-    this.container = opts.floater.parentElement;
+    this.container = opts.container || opts.floater.parentElement;
     this.text = opts.text;
     this.textClone = null;
     this.textBounds = this.text.getBoundingClientRect();
@@ -164,15 +197,12 @@ class TextMask {
     this.maskContainer = opts.maskContainer;
     this.section = opts.section;
     this.sectionBounds = this.section.getBoundingClientRect();
-    this.size = Math.random() * 20 + 10 + "vw";
+    this.size = Math.random() * 20 + 15 + "vw";
     this.colorArray = opts.colorArray || [
-      "#fd0", // #fd0
-      "#39FF14", // #39FF14
-      "#2CE6FF", // #2CE6FF
-      "#F838CF", // #F838CF
-      "#FF4500", // #FF4500
+      "#FFDD00", // #FFDD00
       "#F57134", // #F57134
-      "#0736EE", // #0736EE
+      "#FFBF5A", // #FFBF5A
+      "#FF9400", // #FF9400
     ];
     this.textStyles = [
       "letterSpacing",
@@ -185,9 +215,8 @@ class TextMask {
     ];
     this.mouseX = 0;
     this.mouseY = 0;
+
     this.ballRect = this.floater.getBoundingClientRect();
-    this.ballX = this.ballRect.left + this.ballRect.width / 2;
-    this.ballY = this.ballRect.top + this.ballRect.height / 2;
 
     this.setupResize = this.setupResize.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -235,13 +264,15 @@ class TextMask {
     for (let i = 0; i < this.floaterNum; i++) {
       const floaterClone = this.floater.cloneNode(true);
       floaterClone.classList.add("clone");
+      floaterClone.id = "floater-" + i;
 
       Object.assign(floaterClone.style, {
+        pointerEvents: "none",
         width: this.size,
         height: this.size,
         backgroundColor: this.colorArray[i],
         animationDelay: Math.random() * i + "s",
-        animationDuration: Math.random() * 10 + Math.sqrt(36 * i) + 5 + "s",
+        animationDuration: Math.random() * 10 + Math.sqrt(36 * i) + 3 + "s",
         animationName: i % 2 === 0 ? "float" : "float2",
       });
 
@@ -251,8 +282,6 @@ class TextMask {
 
   setupResize() {
     this.mask.removeChild(this.textClone);
-
-    console.log("resize ran");
 
     const containerChildren = Array.from(this.container.children);
     containerChildren.forEach((child) => {
@@ -285,14 +314,18 @@ class TextMask {
 
     if (!this.animationFrameId) {
       this.animationFrameId = requestAnimationFrame(() => {
-        this.updateBallPosition(this.mouseX, this.mouseY);
+        this.updateBallPosition();
       });
     }
   }
 
-  updateBallPosition(x, y) {
-    const distX = x - this.ballX;
-    const distY = y - this.ballY;
+  updateBallPosition() {
+    const floaterRect = this.floater.getBoundingClientRect();
+
+    this.ballY = this.ballRect.top + floaterRect.height / 2;
+
+    const distX = this.mouseX - floaterRect.width / 2;
+    const distY = this.mouseY - floaterRect.height / 2;
 
     this.floater.style.transform = `translate3d(${distX}px, ${distY}px, 0)`;
 
