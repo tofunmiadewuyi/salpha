@@ -1,4 +1,4 @@
-// global v.1.11
+// global v.1.11.1
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
@@ -20,15 +20,6 @@ function globalPageInit() {
   };
 
   setTimeout(() => {
-    // const height = Math.max(
-    //   document.body.scrollHeight,
-    //   document.body.offsetHeight,
-    //   document.documentElement.clientHeight,
-    //   document.documentElement.scrollHeight,
-    //   document.documentElement.offsetHeight
-    // );
-    // document.documentElement.style.minHeight = height + "px";
-
     if (window.lenis) {
       window.lenis.resize();
     }
@@ -63,6 +54,7 @@ function initLenis() {
 
   if (window.stopLenisOnInit === true) {
     window.lenis.stop();
+    window.stopLenisOnInit = false;
   }
 
   window.lenisCallbacks.push(ScrollTrigger.update);
@@ -237,6 +229,14 @@ class TextMask {
     this.text.style.opacity = "0";
     this.text.style.pointerEvents = "none";
 
+    const textClones = this.mask.querySelectorAll("text");
+    if (textClones) {
+      textClones.forEach((textClone) => {
+        this.mask.removeChild(textClone);
+      });
+    }
+
+    this.textClone = null;
     this.textClone = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "text"
@@ -281,7 +281,7 @@ class TextMask {
   }
 
   setupResize() {
-    this.mask.removeChild(this.textClone);
+    this.textClone = null;
 
     const containerChildren = Array.from(this.container.children);
     containerChildren.forEach((child) => {

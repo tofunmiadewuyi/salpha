@@ -1,42 +1,44 @@
-// about.js 1.10
+// about.js 1.11
 
-lenis.stop();
+window.stopLenisOnInit = true;
+
+const aboutAnimations = [];
 
 function aboutHeroAnim() {
+  const heroText = document.querySelector(".about-h-inner .h2-web");
+
   new TextMask({
     floater: document.querySelector(".color-ball"),
-    text: document.querySelector(".about-h-inner .h2-web"),
+    text: heroText,
     mask: document.querySelector("#about-hero-mask"),
     maskContainer: document.querySelector(".about-h-inner .mask-container"),
     section: document.querySelector(".about-h-inner"),
   });
 
-  setTimeout(() => {
-    lenis.start();
-    gsap
-      .timeline({
-        scrollTrigger: {
-          trigger: ".about-hero",
-          start: "top top",
-          end: "bottom top",
-          markers: true,
-          scrub: true,
-        },
-      })
-      .fromTo(
-        ".about-h-inner svg text",
-        { scale: 0.5, transformOrigin: "center center" },
-        { scale: 4, transformOrigin: "center center" }
-      )
-      .fromTo(
-        ".colors",
-        { scale: 0.8, scaleY: 0.5, autoAlpha: 0.8 }, //0.2
-        { scale: 1, autoAlpha: 1 },
-        "<"
-      )
-      .to(".section:has(.about-hero) .about-h-inner", { yPercent: 40 }, "<")
-      .to(".section:has(.about-hero)", { opacity: 0 });
-  }, 1000);
+  window.lenis.start();
+  gsap
+    .timeline({
+      scrollTrigger: {
+        trigger: ".about-hero",
+        start: "top top",
+        end: "bottom top",
+        // markers: true,
+        scrub: true,
+      },
+    })
+    .fromTo(
+      ".about-h-inner svg text",
+      { scale: 0.5, transformOrigin: "center center" },
+      { scale: 4, transformOrigin: "center center" }
+    )
+    .fromTo(
+      ".colors",
+      { scale: 0.8, scaleY: 0.5, autoAlpha: 0.8 }, //0.2
+      { scale: 1, autoAlpha: 1 },
+      "<"
+    )
+    .to(".section:has(.about-hero) .about-h-inner", { yPercent: 40 }, "<")
+    .to(".section:has(.about-hero)", { opacity: 0 });
 }
 
 function aboutAnim() {
@@ -105,9 +107,9 @@ function aboutAnim() {
     .to(panelGrid, {
       height: window.innerHeight + "px",
       opacity: 0.4,
-      transform: "translate(0vw) scale(0.9)",
+      transform: "translate(0vw) scale(1.2)",
     })
-    .to(".panel-msg h2", { scale: 2, color: "white" }, "<");
+    .to(".panel-msg .panel-msg_content", { scale: 2, color: "white" }, "<");
 
   gsap
     .timeline({
@@ -132,7 +134,7 @@ function aboutAnim() {
       },
     })
     .to(panelGrid, {
-      transform: "translate(0vw) scale(0.75) rotate3d(1, 0, 0, 95deg)",
+      transform: "translate(0vw) scale(0.95) rotate3d(1, 0, 0, 90deg)",
       opacity: 0.2,
     });
 
@@ -156,7 +158,7 @@ function aboutAnim() {
     .to(panelImg, { opacity: 1, scale: 1 }, "<");
 }
 
-function stickySlide() {
+function stickySlideDesktop() {
   const imgContainer = document.querySelector(".impact-slide_clip");
   Object.assign(imgContainer.style, {
     position: "relative",
@@ -233,7 +235,7 @@ function stickySlide() {
     }
   }
 
-  ScrollTrigger.create({
+  const clipTrigger = ScrollTrigger.create({
     trigger: ".about-stickyimages",
     scrub: true,
     pin: ".impact-slide_clip",
@@ -244,12 +246,14 @@ function stickySlide() {
     },
   });
 
+  aboutAnimations.push(clipTrigger);
+
   const stickySliderContent = gsap.utils.toArray(".about-ss_content > *");
   stickySliderContent.forEach((item, i) => {
     gsap.set(item, { yPercent: 100 * (i + 3) });
   });
 
-  gsap
+  const slideAnim = gsap
     .timeline({
       scrollTrigger: {
         trigger: ".sticky-slide",
@@ -265,6 +269,75 @@ function stickySlide() {
       stagger: 0.5,
       ease: "none",
     });
+
+  aboutAnimations.push(slideAnim);
+}
+
+function stickySlideMobile() {
+  // to remove
+  // const stickySliderEl = document.querySelector(".sticky-slide");
+  // Object.assign(stickySliderEl.style, {
+  //   height: "unset",
+  // });
+
+  // to remove
+  // const aboutStickyImages = document.querySelector(".about-stickyimages");
+  // Object.assign(aboutStickyImages.style, {
+  //   position: "relative",
+  //   top: 0,
+  //   height: "unset",
+  // });
+
+  // to remove
+  // const aboutStickySlider = document.querySelector(".about-stickyslider");
+  // Object.assign(aboutStickySlider.style, {
+  //   height: "auto",
+  // });
+
+  const imgContainer = document.querySelector(".impact-slide_clip");
+  Object.assign(imgContainer.style, {
+    position: "relative",
+    overflow: "hidden",
+    width: "100%",
+    pointerEvents: "none",
+  });
+
+  const imgs = Array.from(document.querySelectorAll(".impact-slide_img"));
+  const imgStyle = {
+    position: "absolute",
+    bottom: "0px",
+    height: "100%",
+    width: "100%",
+  };
+
+  const ssm = gsap.timeline({
+    repeat: -1,
+    yoyo: true,
+    scrollTrigger: {
+      trigger: ".sticky-slide",
+      start: "top top",
+      end: "bottom bottom",
+    },
+  });
+
+  imgs.forEach((img, i) => {
+    Object.assign(img.style, imgStyle);
+    img.style.zIndex = imgs.length - i;
+
+    let anim;
+
+    if (i === imgs.length - 1) {
+      anim = gsap.fromTo(img, { xPercent: 0 }, { xPercent: 0, duration: 3 });
+    } else {
+      anim = gsap.fromTo(
+        img,
+        { xPercent: 0 },
+        { xPercent: -100, duration: 1, delay: 3 }
+      );
+    }
+
+    ssm.add(anim);
+  });
 }
 
 function stickySun() {
@@ -285,7 +358,8 @@ function stickySun() {
         scrub: true,
       },
     })
-    .to(".sun-img_container", { yPercent: 5, ease: "none" })
+    .from(".sun-img", { scale: 0.3 })
+    .to(".sun-img_container", { yPercent: 5, ease: "none" }, "<")
     .to(splitPhrase[0], { xPercent: -35, ease: "none" }, 0.7)
     .to(splitPhrase[1], { xPercent: -35, ease: "none" }, "<")
     .to(splitPhrase[2], { xPercent: 15, ease: "none" }, "<");
@@ -309,10 +383,21 @@ function discoverAnim() {
   discoverCards.forEach((el) => el.addEventListener("mouseleave", flip));
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function handleAboutResize() {
+  aboutAnimations.forEach((anim) => anim.kill());
+  if (isMobile) {
+    stickySlideMobile();
+  } else {
+    stickySlideDesktop();
+  }
+
   aboutHeroAnim();
   aboutAnim();
-  stickySlide();
   stickySun();
   discoverAnim();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  handleAboutResize();
+  window.addEventListener("resize", handleAboutResize);
 });

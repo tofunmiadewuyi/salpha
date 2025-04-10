@@ -1,4 +1,4 @@
-// about-shader-slider.js
+// about-slider.js v.1.11
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -32,7 +32,9 @@ ScrollTrigger.create({
       duration: 1.5,
     });
 
-    lenis.stop();
+    if (window.lenis) {
+      window.lenis.stop();
+    }
 
     const onScrollEnd = (sketch) => {
       sketch.mountListeners();
@@ -127,6 +129,8 @@ class Sketch {
     this.boundTouchMove = this.touchMove.bind(this);
     this.boundKeydown = this.keydown.bind(this);
 
+    this.boundResize = this.resize.bind(this);
+
     this.initiate(() => {
       // console.log(this.textures);
       this.setupResize();
@@ -201,12 +205,13 @@ class Sketch {
   }
 
   setupResize() {
-    window.addEventListener("resize", this.resize.bind(this));
+    window.addEventListener("resize", this.boundResize);
   }
 
   resize() {
     this.width = this.slider.offsetWidth;
     this.height = this.slider.offsetHeight;
+
     this.renderer.setSize(this.width, this.height);
     this.camera.aspect = this.width / this.height;
     // image cover
