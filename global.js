@@ -1,4 +1,4 @@
-// global v.1.11.1
+// global v.1.11.2
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
@@ -138,6 +138,32 @@ function initNavigation() {
   navMenuIcon.addEventListener("click", () => {
     nav.classList.add("cc-active");
   });
+
+  let currentProductIndex = 0;
+  const productsNavItem = document.querySelector("[products]");
+  const productItems = Array.from(
+    productsNavItem.querySelectorAll(".nav-dd_item")
+  );
+  const productImgs = Array.from(
+    productsNavItem.querySelectorAll(".nav-dd_img")
+  );
+  productItems.forEach((item, i) => {
+    if (i > 0) {
+      gsap.set(productImgs[i], { autoAlpha: 0, pointerEvents: "none" });
+    }
+    item.addEventListener("mouseenter", () => {
+      gsap.to(productImgs[i], {
+        autoAlpha: 1,
+        pointerEvents: "auto",
+      });
+    });
+    item.addEventListener("mouseleave", () => {
+      if (currentProductIndex === i) {
+        return;
+      }
+      gsap.to(productImgs[i], { autoAlpha: 0, pointerEvents: "none" });
+    });
+  });
 }
 
 /**********************************************************************
@@ -173,6 +199,20 @@ function checkIsMobile() {
   } else {
     window.isMobile = false;
   }
+}
+
+function debounce(func, wait) {
+  let timeout;
+
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }
 
 /**********************************************************************
