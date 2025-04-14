@@ -1,4 +1,4 @@
-// partners.js v.1.10
+// partners.js v.1.11.3
 
 function portal() {
   const canvas = document.getElementById("portal");
@@ -40,22 +40,37 @@ function portal() {
   }
 }
 
-const transforms = [
-  { y: 60, x: -35 },
-  { y: 0, x: -45 },
-  { y: -60, x: -35 },
-  { y: 70, x: 0 },
-  { y: -70, x: 0 },
-  { y: 60, x: 35 },
-  { y: 0, x: 45 },
-  { y: -60, x: 35 },
-];
-
 function partnersHero() {
+  const transforms = [
+    { y: 60, x: -35 },
+    { y: 0, x: -45 },
+    { y: -60, x: -35 },
+    { y: 70, x: 0 },
+    { y: -70, x: 0 },
+    { y: 60, x: 35 },
+    { y: 0, x: 45 },
+    { y: -60, x: 35 },
+  ];
   const section = document.querySelector('[section="partner-hero"]');
   const skewCards = document.querySelectorAll(".skew-card");
   const transformCards = document.querySelectorAll(".skew-transform");
   const { clientWidth: width, clientHeight: height } = section;
+
+  const skewContents = document.querySelectorAll(".skew-content");
+
+  skewContents.forEach((content) => {
+    content.addEventListener("mouseenter", () => {
+      skewContents.forEach((c) => {
+        if (c !== content) {
+          c.classList.add("cc-dimmed");
+        }
+      });
+    });
+
+    content.addEventListener("mouseleave", () => {
+      skewContents.forEach((c) => c.classList.remove("cc-dimmed"));
+    });
+  });
 
   section.addEventListener("mousemove", (e) => {
     const x = e.pageX;
@@ -93,39 +108,63 @@ function partnersHero() {
 }
 
 function partnersTabs() {
-  const hiddenStyle = {
-    visibility: "hidden",
-    display: "none",
-  };
-  const visibleStyle = {
-    visibility: "visible",
-    display: "block",
-  };
   const tabs = Array.from(document.querySelectorAll(".tab"));
-  const tabContents = document.querySelectorAll(".partners-content");
-  Object.assign(tabContents[1].style, hiddenStyle);
+  const tabContents = Array.from(
+    document.querySelectorAll(".partners-content")
+  );
+
+  const contentWrapper = tabContents[0].parentElement;
+  Object.assign(contentWrapper.style, {
+    height: tabContents[0].offsetHeight,
+    overflow: "hidden",
+    position: "relative",
+  });
+
+  const scrollContainer = document.createElement("div");
+  scrollContainer.classList.add("scroll-container");
+  Object.assign(scrollContainer.style, {
+    position: "relative",
+  });
+
+  contentWrapper.appendChild(scrollContainer);
+
+  window.scrollContainer = scrollContainer;
+
+  tabContents.forEach((content) => {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("content-wrapper");
+    Object.assign(wrapper.style, {
+      height: "max-content",
+      width: "100%",
+      position: "absolute",
+      inset: 0,
+      // flex: "0 0 100%",
+    });
+
+    //transfer attr
+    const pageName = content.getAttribute("tab-content");
+    content.removeAttribute("tab-content");
+    wrapper.setAttribute("tab-content", pageName);
+
+    wrapper.appendChild(content);
+    scrollContainer.appendChild(wrapper);
+  });
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
-      const content = document.querySelector(
-        `[tab-content="${tab.getAttribute("tab")}"]`
-      );
-
-      tabs.forEach((otherTab) => {
-        otherTab.classList.remove("cc-active");
-      });
-      tab.classList.toggle("cc-active");
-
-      Object.assign(content.style, visibleStyle);
-
-      const otherContent = document.querySelectorAll(
-        `.partners-content:not([tab-content="${tab.getAttribute("tab")}"])`
-      );
-      otherContent.forEach((content) =>
-        Object.assign(content.style, hiddenStyle)
-      );
+      const name = tab.getAttribute("data-tab");
+      showTabContent(name, "pop");
     });
   });
+
+  setContainerStart(contentWrapper);
+  const resize = () => {
+    setContainerStart(contentWrapper);
+  };
+  const debouncedResize = debounce(resize, 100);
+  window.addEventListener("resize", debouncedResize);
+
+  tabs[0].click();
 
   const tabBtns = document.querySelectorAll(".pt-content");
 

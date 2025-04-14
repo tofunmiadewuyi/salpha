@@ -1,4 +1,4 @@
-// global v.1.11.2
+// global v.1.11.3
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
@@ -213,6 +213,92 @@ function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
+}
+
+function setParam(k, v) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(k, v);
+  const newUrl = url.toString();
+  window.history.pushState({}, "", newUrl);
+}
+
+/**********************************************************************
+ * tabs related
+ ***********************************************************************/
+
+function setContainerStart(container) {
+  const containerRect = container.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(container);
+
+  window.containerStart =
+    containerRect.left +
+    parseFloat(computedStyle.paddingLeft) +
+    parseFloat(computedStyle.borderLeftWidth);
+}
+
+function showTabContent(name, anim = "slide") {
+  const bg = window.tabBg || (window.tabBg = document.querySelector(".tab-bg"));
+  const tab = document.querySelector(`[data-tab="${name}"]`);
+
+  let tabWidth = tab.offsetWidth,
+    tabLeft = tab.offsetLeft;
+
+  gsap.set("[data-tab]", { className: "tab" });
+  const tl = gsap
+    .timeline()
+    .to(`[data-tab="${name}"]`, { className: "tab cc-active" });
+
+  name = document.querySelector(`[tab-content="${name}"]`);
+
+  const slide = () => {
+    const { left: contentLeft, height: contentHeight } =
+      name.getBoundingClientRect();
+
+    const scrollLast = window.scrollLast || 0;
+    const dist = window.containerStart - contentLeft + scrollLast;
+
+    tl.to(window.currentTab, { autoAlpha: 0, duration: 0.5 }, "<")
+      .to(name, { autoAlpha: 1 }, "<")
+      .to(window.scrollContainer, { x: dist, height: contentHeight }, "<");
+
+    window.scrollLast = dist;
+  };
+
+  const pop = () => {
+    const { height: contentHeight } = name.getBoundingClientRect();
+    const { height: activeContentHeight } = window.currentTab
+      ? window.currentTab.getBoundingClientRect()
+      : name.getBoundingClientRect();
+    tl.to(window.currentTab, { autoAlpha: 0, scale: 0.8, yPercent: 4 }, "<")
+      .fromTo(
+        name,
+        { scale: 0.8, autoAlpha: 0, yPercent: -10 },
+        { scale: 1, autoAlpha: 1, yPercent: 0 },
+        "<"
+      )
+      .to(
+        window.scrollContainer,
+        { height: Math.max(contentHeight, activeContentHeight) },
+        "<"
+      );
+  };
+
+  tl.to(bg, { width: tabWidth, left: tabLeft }, "<");
+
+  const animationMap = {
+    slide,
+    pop,
+  };
+
+  anim = animationMap[anim];
+
+  if (anim) {
+    anim();
+  } else {
+    slide();
+  }
+
+  window.currentTab = name;
 }
 
 /**********************************************************************
