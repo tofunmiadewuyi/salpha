@@ -1,4 +1,4 @@
-// about.js 1.11
+// about.js 1.11.4
 
 window.stopLenisOnInit = true;
 
@@ -352,7 +352,7 @@ function stickySun() {
       scrollTrigger: {
         trigger: ".bright-inner .h-screen:first-child",
         start: "top top",
-        end: `bottom+=${window.innerHeight} bottom+=30`,
+        end: `bottom+=${window.innerHeight * 0.75} top`,
         pin: true,
         pinSpacing: false,
         scrub: true,
@@ -360,9 +360,18 @@ function stickySun() {
     })
     .from(".sun-img", { scale: 0.3 })
     .to(".sun-img_container", { yPercent: 5, ease: "none" }, "<")
-    .to(splitPhrase[0], { xPercent: -35, ease: "none" }, 0.7)
+    .to(splitPhrase[0], { xPercent: -35, ease: "none" })
     .to(splitPhrase[1], { xPercent: -35, ease: "none" }, "<")
-    .to(splitPhrase[2], { xPercent: 15, ease: "none" }, "<");
+    .to(splitPhrase[2], { xPercent: 15, ease: "none" }, "<")
+    .fromTo(
+      ".bright-inner .h-screen:nth-child(2) .section-title_sub",
+      { autoAlpha: 0, yPercent: 5 },
+      { autoAlpha: 1, yPercent: 0, duration: 0.4 }
+    )
+    .to(splitPhrase[0], { xPercent: 0, ease: "none" })
+    .to(splitPhrase[1], { xPercent: 0, ease: "none" }, "<")
+    .to(splitPhrase[2], { xPercent: 0, ease: "none" }, "<")
+    .to(".bright-content", { paddingBottom: "2vh" });
 }
 
 function discoverAnim() {

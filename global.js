@@ -1,4 +1,4 @@
-// global v.1.11.3
+// global v.1.11.4
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
@@ -246,9 +246,15 @@ function showTabContent(name, anim = "slide") {
   gsap.set("[data-tab]", { className: "tab" });
   const tl = gsap
     .timeline()
-    .to(`[data-tab="${name}"]`, { className: "tab cc-active" });
+    .to(`[data-tab="${name}"]`, { className: "tab cc-active" })
+    .to(bg, { width: tabWidth, left: tabLeft }, "<");
 
+  const otherTab =
+    window.currentTab ||
+    document.querySelector(`[tab-content]:not([tab-content="${name}"])`);
   name = document.querySelector(`[tab-content="${name}"]`);
+
+  if (name === otherTab) return;
 
   const slide = () => {
     const { left: contentLeft, height: contentHeight } =
@@ -265,25 +271,44 @@ function showTabContent(name, anim = "slide") {
   };
 
   const pop = () => {
+    console.log("pop init");
     const { height: contentHeight } = name.getBoundingClientRect();
     const { height: activeContentHeight } = window.currentTab
       ? window.currentTab.getBoundingClientRect()
       : name.getBoundingClientRect();
-    tl.to(window.currentTab, { autoAlpha: 0, scale: 0.8, yPercent: 4 }, "<")
+
+    tl.to(
+      window.scrollContainer,
+      { height: Math.max(contentHeight, activeContentHeight) },
+      "<"
+    )
+      .set(name, { zIndex: 1 }, "<")
+      .set(otherTab, { zIndex: 0 }, "<")
       .fromTo(
-        name,
-        { scale: 0.8, autoAlpha: 0, yPercent: -10 },
+        window.currentTab || otherTab,
         { scale: 1, autoAlpha: 1, yPercent: 0 },
+        {
+          autoAlpha: 0,
+          scale: 0.9,
+          yPercent: 5,
+          duration: 1.3,
+          ease: "power4.out",
+        },
         "<"
       )
-      .to(
-        window.scrollContainer,
-        { height: Math.max(contentHeight, activeContentHeight) },
-        "<"
+      .fromTo(
+        name,
+        { scale: 0.9, autoAlpha: 0.9, yPercent: 5 },
+        {
+          scale: 1,
+          autoAlpha: 1,
+          yPercent: 0,
+          duration: 1.3,
+          ease: "power4.out",
+        },
+        "<+=0.05"
       );
   };
-
-  tl.to(bg, { width: tabWidth, left: tabLeft }, "<");
 
   const animationMap = {
     slide,

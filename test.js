@@ -1,16 +1,14 @@
-// support v.1.11.4
+// support v.1.11.3
+
+// new code
+
+// some more new code
 
 function faqsPage() {
   const page = document.querySelector('[tab-content="faqs"]');
-  const faqBtns = Array.from(page.querySelectorAll(".c-expandable"));
-
-  let lastOpened = 0;
+  const faqBtns = page.querySelectorAll(".c-expandable");
 
   function toggle() {
-    if (this !== faqBtns[lastOpened]) {
-      faqBtns[lastOpened].classList.remove("cc-open");
-      lastOpened = faqBtns.findIndex((btn) => btn === this);
-    }
     this.classList.toggle("cc-open");
     setTimeout(() => {
       const { height: pageHeight } = window.currentTab.getBoundingClientRect();
@@ -25,14 +23,9 @@ function faqsPage() {
 
 function contactPage() {
   const page = document.querySelector('[tab-content="contact-us"]');
-  const faqBtns = Array.from(page.querySelectorAll(".c-expandable"));
+  const faqBtns = page.querySelectorAll(".c-expandable");
 
-  let lastOpened = 0;
   function toggle() {
-    if (this !== faqBtns[lastOpened]) {
-      faqBtns[lastOpened].classList.remove("cc-open");
-      lastOpened = faqBtns.findIndex((btn) => btn === this);
-    }
     this.classList.toggle("cc-open");
 
     // add 100vh if the form is expanding, until the actual size is calculated
@@ -60,23 +53,6 @@ function contactPage() {
 
 function locatePage() {
   const page = document.querySelector('[tab-content="locate-us"]');
-  const imgs = Array.from(page.querySelectorAll(".locate-us_img"));
-
-  let current = 0;
-
-  gsap.set(imgs, { autoAlpha: 0 });
-  gsap.set(imgs[0], { autoAlpha: 1 });
-
-  const cycleFade = () => {
-    const next = (current + 1) % imgs.length;
-
-    gsap.to(imgs[current], { autoAlpha: 0, duration: 1 });
-    gsap.to(imgs[next], { autoAlpha: 1, duration: 1 });
-
-    current = next;
-  };
-
-  setInterval(cycleFade, 4000);
 }
 
 function initPage() {
