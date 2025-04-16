@@ -1,20 +1,21 @@
-// about-slider.js v.1.11
+// about-slider.js v.1.11.5
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
+const content = Array.from(document.querySelectorAll(".about-slider_content"));
 
 // slider mask
 gsap
   .timeline({
     scrollTrigger: {
-      trigger: ".about-slider",
-      start: "top bottom",
+      trigger: ".panel-inner",
+      start: "bottom 80%",
       scrub: true,
-      end: "top top",
+      end: "bottom top",
     },
   })
-  .to(".slider-mask", {
-    backgroundPosition: "0 45%",
+  .to(".slide-mask", {
+    yPercent: -40,
   });
 
 // slider component
@@ -24,14 +25,7 @@ ScrollTrigger.create({
   start: "top top",
   end: `bottom+=${window.innerHeight * (data.length - 1)} bottom`, //end of the last slide
   id: "slider",
-  //   markers: true,
   onEnter: () => {
-    // remove mask completely
-    gsap.to(".slider-mask", {
-      backgroundPosition: "0 100%",
-      duration: 1.5,
-    });
-
     if (window.lenis) {
       window.lenis.stop();
     }
@@ -72,11 +66,6 @@ ScrollTrigger.create({
       if (sketch.current !== 0) sketch.slideTo(0);
       sketch.removeContent(0, -1);
     }
-    // add mask back
-    gsap.to(".slider-mask", {
-      backgroundPosition: "0 40%",
-      duration: 1,
-    });
   },
 });
 
@@ -101,9 +90,7 @@ class Sketch {
       .querySelector(".about-slider")
       .getBoundingClientRect();
     this.images = data;
-    this.content = Array.from(
-      document.querySelectorAll(".about-slider_content")
-    );
+    this.content = content;
     this.width = this.slider.offsetWidth;
     this.height = this.slider.offsetHeight;
     this.slider.appendChild(this.renderer.domElement);
@@ -138,6 +125,7 @@ class Sketch {
       this.addObjects();
       this.resize();
       this.play();
+      this.removeContent(0, -1);
     });
   }
   initiate(cb) {
@@ -294,6 +282,15 @@ class Sketch {
 
     // remove content
     if (this.current >= 0) this.removeContent(this.current, direction);
+
+    if (nextIndex > 0) {
+      // remove mask completely
+      // gsap.to(".slide-mask", { yPercent: -120 });
+      gsap.to(".slide-mask", { opacity: 0 });
+    } else {
+      // add mask back
+      gsap.to(".slide-mask", { opacity: 1 });
+    }
 
     let tl = gsap.timeline({
       onComplete: () => {

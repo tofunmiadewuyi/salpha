@@ -1,6 +1,5 @@
-// impact.js v.1.11
+// impact.js v.1.11.5
 
-// document.querySelector(".impact-intro_content").style.opacity = 0;
 function impactHero() {
   const slides = Array.from(document.querySelectorAll(".sticky-slide"));
 
@@ -27,7 +26,7 @@ function impactHero() {
     },
   });
   tl.to(".impact-intro_content", { opacity: 1, duration: 1 })
-    .to(".impact-slider", { borderRadius: 0, duration: 1 }, "<+=0.9")
+    .to(slides[0], { borderRadius: 0, duration: 1 }, "<+=0.9")
     .to(
       introContent,
       {
@@ -41,28 +40,13 @@ function impactHero() {
       "<"
     );
 
-  const directiveOffset = (slides.length - 2) * window.innerHeight;
-  gsap.set(".scroll-directive", { y: -directiveOffset });
-  const slideCount = slides.length;
-  const slideHeight = window.innerHeight;
-  const showAtSlide = 2;
-  const scrollRange = (slideCount - showAtSlide) * slideHeight;
   gsap
     .timeline({
       scrollTrigger: {
         trigger: ".impact-slider",
-        scrub: 1,
+        scrub: true,
         start: "top top",
         end: "bottom bottom",
-        onUpdate: (self) => {
-          const progress =
-            (self.progress - (showAtSlide - 1) / (slideCount - 1)) /
-            ((slideCount - showAtSlide) / (slideCount - 1));
-          const clamped = gsap.utils.clamp(0, 1, progress);
-          gsap.set(".scroll-directive", {
-            y: -scrollRange + clamped * scrollRange,
-          });
-        },
       },
     })
     .to(
@@ -98,6 +82,19 @@ function impactHero() {
     end: `bottom+=${window.innerHeight * (slides.length - 2)} bottom`,
     onUpdate: (self) => {
       updateImageHeights(imgs, self.progress);
+    },
+    onLeave: () => {
+      gsap.to(".impact-slider .scroll-directive", {
+        opacity: 0,
+        duration: 0.3,
+      });
+    },
+    onEnterBack: () => {
+      gsap.to(".impact-slider .scroll-directive", {
+        opacity: 1,
+        overwrite: true,
+        duration: 0.3,
+      });
     },
   });
 }
@@ -196,22 +193,29 @@ function greenerSection() {
       },
     })
     .to(".greener-mask.cc-end", { yPercent: 0 });
+}
 
+function beyondSolarSection() {
   gsap
     .timeline({
       scrollTrigger: {
         trigger: ".beyond-solar_inner",
         start: "top 20%",
-        end: "bottom bottom",
+        end: `+=${window.innerHeight * 0.5}`,
         scrub: true,
-        markers: true,
       },
     })
-    .to(".b-s_img", { scale: 1.4, yPercent: 40, ease: "none" })
-    .to(".b-s_content .section-title", { yPercent: 400, ease: "none" }, "<");
+    .fromTo(
+      ".b-s_img",
+      { scale: 1, yPercent: 0 },
+      { scale: 1.4, yPercent: 40, ease: "none" }
+    )
+    .to(".b-s_content .section-title", { yPercent: 400, ease: "none" }, "<")
+    .to(".b-s_body > *", { yPercent: 150, stagger: 0.2 }, "<");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   impactHero();
   greenerSection();
+  beyondSolarSection();
 });

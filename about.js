@@ -1,4 +1,4 @@
-// about.js 1.11.4
+// about.js 1.11.5
 
 window.stopLenisOnInit = true;
 
@@ -69,12 +69,12 @@ function aboutAnim() {
       scrollTrigger: {
         trigger: ".about-msg_wrapper",
         start: "top top",
-        end: "bottom bottom",
+        end: "bottom 70%",
         scrub: true,
         onUpdate: (self) => {
           const progress = self.progress;
           gsap.set(".about-msg_wrapper .h-screen", {
-            yPercent: 100 * progress,
+            yPercent: 130 * progress,
           });
         },
       },
@@ -82,7 +82,6 @@ function aboutAnim() {
     .to(
       aboutMsgSplit.lines,
       { width: "100%", stagger: 0.5, ease: "none" },
-
       "<"
     );
 
@@ -135,12 +134,13 @@ function aboutAnim() {
     })
     .to(panelGrid, {
       transform: "translate(0vw) scale(0.95) rotate3d(1, 0, 0, 90deg)",
-      opacity: 0.2,
+      opacity: 0.3,
     });
 
   const panelImg = document.querySelector(".panel-img img");
   gsap.set(panelImg, {
-    scale: 2,
+    // scale: 1.05,
+    yPercent: 1,
     transformOrigin: "top center",
     opacity: 0,
     position: "relative",
@@ -150,12 +150,12 @@ function aboutAnim() {
     .timeline({
       scrollTrigger: {
         trigger: ".panel-img",
-        start: "top 80%",
-        end: "top 30%",
+        start: "top 70%",
+        end: "top center",
         scrub: true,
       },
     })
-    .to(panelImg, { opacity: 1, scale: 1 }, "<");
+    .to(panelImg, { opacity: 1, yPercent: 0, scale: 1 });
 }
 
 function stickySlideDesktop() {
@@ -257,14 +257,26 @@ function stickySlideDesktop() {
     .timeline({
       scrollTrigger: {
         trigger: ".sticky-slide",
-        start: "top top",
+        start: "top 10%",
         pin: true,
-        end: `bottom+=${window.innerHeight * 2.5} bottom`,
+        end: `bottom+=${window.innerHeight * 2.9} bottom`,
         scrub: true,
+        onLeave: () => {
+          gsap.to(".about-stickyslider .scroll-directive", {
+            opacity: 0,
+            duration: 0.3,
+          });
+        },
+        onEnterBack: () => {
+          gsap.to(".about-stickyslider .scroll-directive", {
+            opacity: 1,
+            overwrite: true,
+            duration: 0.3,
+          });
+        },
       },
     })
     .to(stickySliderContent, {
-      // autoAlpha: 1,
       yPercent: 0,
       stagger: 0.5,
       ease: "none",
