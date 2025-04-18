@@ -171,7 +171,7 @@ function initNavigation() {
 
   const setNavTheme = (section) => {
     const theme = section.dataset.theme;
-    if (theme === "light") {
+    if (theme === "dark") {
       navWrapper.classList.add("cc-dark");
     } else {
       navWrapper.classList.remove("cc-dark");
