@@ -204,7 +204,7 @@ function initNavigation() {
 
     if (isDarkSection) assignTheme(section, "light");
     else if (isLightSection) assignTheme(section, "dark");
-    else assignTheme(section, "light");
+    else assignTheme(section, "dark");
 
     observer.observe(section);
   });
