@@ -1,4 +1,4 @@
-// global v.1.11.4
+// global v.1.11.5
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
@@ -163,6 +163,50 @@ function initNavigation() {
       }
       gsap.to(productImgs[i], { autoAlpha: 0, pointerEvents: "none" });
     });
+  });
+
+  //navWrapper
+  const navHeight = navWrapper.offsetHeight;
+  const sections = document.querySelectorAll(".page-wrapper > div:not(.c-nav)");
+
+  const setNavTheme = (section) => {
+    const theme = section.dataset.theme;
+    if (theme === "dark") {
+      navWrapper.classList.add("cc-dark");
+    } else {
+      navWrapper.classList.remove("cc-dark");
+    }
+  };
+
+  const observerCb = (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        setNavTheme(entry.target);
+      } else {
+        // console.log("left...", entry.target);
+      }
+    });
+  };
+  const observerOptions = {
+    rootMargin: `0px 0px -${window.innerHeight - navHeight}px 0px`,
+  };
+  const observer = new IntersectionObserver(observerCb, observerOptions);
+
+  const assignTheme = (section, theme) => {
+    const hasTheme = section.hasAttribute("data-theme");
+    if (!hasTheme) section.setAttribute("data-theme", theme);
+  };
+
+  sections.forEach((section) => {
+    console.log(section.classList.contains("section"));
+    const isDarkSection = section.classList.contains("cc-black");
+    const isLightSection = section.classList.contains("cc-white");
+
+    if (isDarkSection) assignTheme(section, "light");
+    else if (isLightSection) assignTheme(section, "dark");
+    else assignTheme(section, "light");
+
+    observer.observe(section);
   });
 }
 
