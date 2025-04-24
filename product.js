@@ -57,7 +57,6 @@ function productHero() {
         ease: "none",
         scrollTrigger: {
           trigger: section,
-          markers: true,
           start: "top top",
           pin: productWrappers[i],
           end: `+=${height * 3}`,
