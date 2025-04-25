@@ -1,4 +1,4 @@
-// product.js v.0
+// product.js v.1.0
 
 function productHero() {
   // intro animation
@@ -89,7 +89,11 @@ function productHero() {
       .to(productBg, { yPercent: -100, autoAlpha: 0 })
       .to(productRock, { autoAlpha: 0 }, "<")
       .to(bgName, { scale: 0.2, yPercent: -70, color: nameColor }, "<")
-      .to(productDescs[i], { autoAlpha: 1, yPercent: 0, duration: 0.2 })
+      .to(
+        productDescs[i],
+        { autoAlpha: 1, yPercent: 0, duration: 0.2 },
+        "-=0.2"
+      )
       .from(productWrapper.querySelector(".product-info_top"), {
         y: 20,
         stagger: 0.2,
@@ -104,28 +108,42 @@ function productDescriptions() {
 
   let animations = [];
 
-  productDescs.forEach((desc) => {
+  productDescs.forEach((desc, index) => {
     const items = desc.querySelectorAll(".product-desc_item");
     const suns = [];
-    // const progress = [];
-    items.forEach((item) => {
+    const progresses = [];
+
+    items.forEach((item, i) => {
       item.classList.remove("cc-active");
       suns.push(item.querySelector(".product-desc_active"));
-      //   progress.push(item.querySelector(".product-desc_progress"));
+      progresses.push(item.querySelector(".product-desc_progress"));
+      item.addEventListener("click", () => {
+        const anim = animations[index];
+        if (anim.playing) {
+          anim.stop();
+        }
+        anim.startFromIndex(i);
+      });
     });
 
     const animation = {
       timeline: null,
       playing: false,
+      currentIndex: 0,
+
       start() {
         if (this.playing) return;
         this.playing = true;
         this.timeline = gsap.timeline({ repeat: -1 });
 
-        items.forEach((item, i) => {
+        for (let i = 0; i < items.length; i++) {
+          const idx = (i + this.currentIndex) % items.length;
+          const item = items[idx];
           const sun = item.querySelector(".product-desc_active");
           const progress = item.querySelector(".product-desc_progress");
-          this.timeline.to(suns, { opacity: 0 });
+
+          this.timeline.set(suns, { opacity: 0 });
+          this.timeline.set(progresses, { width: "100%" });
           this.timeline.to(item, {
             onStart: () => {
               items.forEach((i) => i.classList.remove("cc-active"));
@@ -135,10 +153,18 @@ function productDescriptions() {
           });
           this.timeline.to(sun, { opacity: 1, duration: 6 }); // hold for 6 seconds
           this.timeline.to(progress, { width: 0, duration: 6 }, "<"); // hold for (same) 6 seconds
-        });
+        }
 
         return this;
       },
+
+      startFromIndex(index) {
+        this.stop();
+        this.currentIndex = index;
+        this.start();
+        return this;
+      },
+
       stop() {
         if (!this.playing) return;
         this.playing = false;
@@ -181,26 +207,33 @@ function productDescriptions() {
 }
 
 function galleries() {
+  const page = document.querySelector(".page-wrapper");
   const galleries = document.querySelectorAll(".product-gallery");
   const thumbnails = document.querySelectorAll(".product-thumbnails");
-  thumbnails.forEach((thumbnail, i) => {
-    thumbnail.addEventListener("click", () => {
-      galleries[i].classList.add("cc-active");
+  galleries.forEach((gallery, i) => {
+    thumbnails[i].addEventListener("click", () => {
+      gallery.classList.add("cc-active");
+      lenis.stop();
     });
 
-    const btns = galleries[i].querySelectorAll(".product-gallery_btn");
+    const btns = gallery.querySelectorAll(".product-gallery_btn");
     const prev = btns[0];
     const next = btns[1];
 
-    const outside = galleries[i].querySelector(".product-gallery_bg");
+    const outside = gallery.querySelector(".product-gallery_bg");
     outside.addEventListener("click", (e) => {
-      galleries[i].classList.remove("cc-active");
+      gallery.classList.remove("cc-active");
+      lenis.start();
     });
 
-    new Swiper(galleries[i], {
+    new Swiper(gallery, {
       cssMode: true,
       navigation: { nextEl: next, prevEl: prev },
     });
+
+    const wrapper = gallery.closest(".product-wrapper");
+    wrapper.removeChild(gallery);
+    page.appendChild(gallery);
   });
 }
 
