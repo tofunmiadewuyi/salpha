@@ -1,8 +1,17 @@
-// global v.1.11.5
+// global v.1.11.6
 gsap.registerPlugin(ScrollTrigger);
 gsap.registerPlugin(SplitText);
 
 window.lenisCallbacks = [];
+window.lenisBind = (fn) => {
+  const index = window.lenisCallbacks.length;
+  window.lenisCallbacks.push(fn);
+  return index;
+};
+window.lenisUnbind = (index) => {
+  window.lenisCallbacks.splice(index, 1);
+  return null;
+};
 
 document.addEventListener("DOMContentLoaded", globalPageInit);
 
@@ -57,7 +66,7 @@ function initLenis() {
     window.stopLenisOnInit = false;
   }
 
-  window.lenisCallbacks.push(ScrollTrigger.update);
+  lenisBind(ScrollTrigger.update);
 
   function lenisScroll(e) {
     if (window.lenisCallbacks && window.lenisCallbacks.length) {
@@ -168,6 +177,8 @@ function initNavigation() {
   //navWrapper
   const navHeight = navWrapper.offsetHeight;
   const sections = document.querySelectorAll(".page-wrapper > div:not(.c-nav)");
+  let transitionStart = null,
+    transitionFrom = [];
 
   const setNavTheme = (section) => {
     const theme = section.dataset.theme;
@@ -178,12 +189,29 @@ function initNavigation() {
     }
   };
 
+  const settleTheme = () => {
+    const diff = Math.abs(lenis.scroll - transitionStart);
+    if (diff < navHeight / 4) {
+      transitionFrom.pop();
+      const recent = transitionFrom[transitionFrom.length - 1];
+      if (recent) {
+        setNavTheme(recent);
+      }
+      if (transitionFrom.length >= 10) {
+        // remove first half, saving memory
+        transitionFrom.splice(0, Math.floor(transitionFrom.length / 2));
+      }
+    }
+  };
+
   const observerCb = (entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         setNavTheme(entry.target);
+        transitionStart = lenis.scroll;
+        transitionFrom.push(entry.target);
       } else {
-        // console.log("left...", entry.target);
+        settleTheme();
       }
     });
   };
@@ -198,7 +226,6 @@ function initNavigation() {
   };
 
   sections.forEach((section) => {
-    console.log(section.classList.contains("section"));
     const isDarkSection = section.classList.contains("cc-black");
     const isLightSection = section.classList.contains("cc-white");
 

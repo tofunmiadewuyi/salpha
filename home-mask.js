@@ -1,4 +1,4 @@
-// home-mask v.1.11
+// home-mask v.1.11.6
 
 function homeMask() {
   const sNumbers = document.querySelector(".numbers-content");
@@ -92,13 +92,13 @@ function homeMask() {
   });
 
   const minisunSpread = document.querySelector(".minisun-spread");
+
   const glowSpread = document.querySelector(".glow-spread");
   function updatePosition(x, y) {
     let { top, bottom, height } = sNumbers.getBoundingClientRect();
 
-    let half = minisunSpread.offsetHeight / 2;
     bottom = isMobile ? bottom : bottom - 60;
-    updateMSSpread(y, top, bottom, half);
+    updateMSSpread(y, top, bottom);
 
     // y = y < top + half ? top + half : y > bottom - half ? bottom - half : y;
     // y = y < top + half ? top : y > bottom - half ? bottom : y;
@@ -113,29 +113,34 @@ function homeMask() {
     }px)`;
   }
 
-  function updateMSSpread(y, top, bottom, msHalf) {
-    let ms, op;
+  let msHalf = minisunSpread.offsetHeight / 2;
+  function updateMSSpread(y, top, bottom) {
+    let ms, op, show;
     const msFull = msHalf * 2;
     if (y < top) {
       ms = 50;
-      op = 0;
+      op = show = 0;
     } else if (y > top && y < top + msHalf) {
       ms = 50 + (-50 * (y - top)) / msHalf;
       op = (1 - ms / 50) * 0.4;
+      show = 1;
     } else if (y > top + msHalf && y < bottom - msHalf) {
       ms = 0;
       op = 0.4;
+      show = 1;
     } else if (y < bottom && y > bottom - msFull) {
       ms = -50 + (50 * (bottom - y)) / msFull;
       op = (1 - ms / -50) * 0.4;
+      show = 1;
     } else if (y > bottom) {
       ms = -50;
-      op = 0;
+      op = show = 0;
     }
-    gsap.to(minisunSpread, {
-      yPercent: ms,
-      opacity: op,
+    gsap.to(minisunSpread, { yPercent: ms, opacity: op, overwrite: "auto" });
+    gsap.to([glow, cursor], {
+      opacity: show,
       overwrite: "auto",
+      duration: 0.1,
     });
     gsap.to(glowSpread, { opacity: op, overwrite: "auto" });
   }
@@ -144,26 +149,6 @@ function homeMask() {
     updatePosition(cursorX, cursorY);
   };
   lenisCallbacks.push(maskScroll);
-
-  ScrollTrigger.create({
-    trigger: ".numbers-inner",
-    start: "top 80%",
-    end: "bottom 20%",
-    scrub: 1,
-
-    onEnter: () => {
-      gsap.set([glow, cursor], { opacity: 1 });
-    },
-    onEnterBack: () => {
-      gsap.set([glow, cursor], { opacity: 1 });
-    },
-    onLeave: () => {
-      gsap.set([glow, cursor], { opacity: 0 });
-    },
-    onLeaveBack: () => {
-      gsap.set([glow, cursor], { opacity: 0 });
-    },
-  });
 
   const removeAppendedChildren = () => {
     appendedChildren.forEach((child) => {
