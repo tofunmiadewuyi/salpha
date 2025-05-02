@@ -1,4 +1,4 @@
-// home-slider v.1.11
+// home-slider v.1.11.6
 
 const slider = document.getElementById("slider");
 const data = JSON.parse(slider.getAttribute("data-images"));
@@ -59,6 +59,7 @@ let sliderTrigger = ScrollTrigger.create({
 
       setTimeout(() => {
         sketch.showContent(0, 1);
+        sketch.floatProduct(0);
 
         // mount listeners afer initial scroll doesnt get caught
         setTimeout(() => {
@@ -139,6 +140,9 @@ class Sketch {
     this.scrolling = false;
     this.scrollStop = null;
 
+    // floating animations
+    this.floatTl = {};
+
     // store bound methods as instance properties
     this.boundScroll = this.scroll.bind(this);
     this.boundTouchStart = this.touchStart.bind(this);
@@ -208,6 +212,17 @@ class Sketch {
         },
         "<0.5"
       );
+  }
+
+  floatProduct(index) {
+    const img = this.content[index].querySelector(".home-slider_product");
+    if (this.floatTl[index]) {
+      this.floatTl[index].kill();
+    }
+    this.floatTl[index] = gsap
+      .timeline({ repeat: -1, yoyo: true, overwrite: true })
+      .to(img, { y: "-=8", ease: Sine.easeInOut, duration: 1.2 })
+      .to(img, { y: "+=8", ease: Sine.easeInOut, duration: 1.2 });
   }
 
   removeContent(index, direction) {
@@ -342,6 +357,9 @@ class Sketch {
     // remove content
     if (this.current >= 0) this.removeContent(this.current, direction);
 
+    // kill floating animation
+    if (this.floatTl[this.current]) this.floatTl[this.current].kill();
+
     // remove cloud if it's not the last one
     if (nextIndex !== data.length - 1) showClouds(true);
 
@@ -379,6 +397,8 @@ class Sketch {
         },
         "<0.5"
       );
+
+    this.floatProduct(nextIndex);
   }
 
   prev() {
