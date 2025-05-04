@@ -1,43 +1,162 @@
-// partners.js v.1.11.3
-
-function portal() {
+// partners.js v.1.11.6
+function partnersIntro() {
   const canvas = document.getElementById("portal");
   const context = canvas.getContext("2d");
 
-  canvas.width = 1158;
-  canvas.height = 770;
+  window.pageWrapper = document.querySelector(".page-wrapper");
 
-  const frameCount = 147;
+  const frameCount = 49;
   const currentFrame = (index) =>
-    `/portal/Speed${index.toString().padStart(2, "0")}.jpg`;
+    `/images/portal/Speed${index.toString().padStart(2, "0")}.png`;
 
-  const images = [];
-  const airpods = {
-    frame: 0,
+  const preloadImages = () => {
+    for (let i = 1; i < frameCount; i++) {
+      const img = new Image();
+      img.src = currentFrame(i);
+    }
   };
 
-  for (let i = 0; i < frameCount; i++) {
-    const img = new Image();
-    img.src = currentFrame(i);
-    images.push(img);
-  }
+  const img = new Image();
+  img.src = currentFrame(0);
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-  gsap.to(airpods, {
-    frame: frameCount - 1,
-    snap: "frame",
-    ease: "none",
-    scrollTrigger: {
-      scrub: 0.5,
-    },
-    onUpdate: render, // use animation onUpdate instead of scrollTrigger's onUpdate
+  const drawImage = () => {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+
+  img.onload = function () {
+    drawImage();
+  };
+
+  const updateImage = (index) => {
+    img.src = currentFrame(index);
+  };
+
+  window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    drawImage();
   });
 
-  images[0].onload = render;
+  let isAutoScrolling = true;
+  let autoScrollSpeed = 6;
+  let startAutoScrollTime = null;
+  let idleTimeout = null;
+  let idleTimeoutDelay = 1500;
 
-  function render() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(images[airpods.frame], 0, 0);
-  }
+  const startAutoScroll = () => {
+    isAutoScrolling = true;
+
+    // Adjust start time to match current scroll position
+    const currentScroll = window.lenis.scroll;
+    const timeElapsedForCurrentScroll =
+      (currentScroll / (autoScrollSpeed * 60)) * 1000;
+    startAutoScrollTime = performance.now() - timeElapsedForCurrentScroll;
+
+    const autoScrollAnimation = () => {
+      if (!isAutoScrolling) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+        return;
+      }
+
+      const currentTime = performance.now();
+      const timePassed = currentTime - startAutoScrollTime;
+      const scrollAmountPerSecond = autoScrollSpeed * 60;
+      const scrollPosition = (timePassed / 1000) * scrollAmountPerSecond;
+
+      window.lenis.scrollTo(scrollPosition, {
+        immediate: true,
+      });
+
+      animationFrame = requestAnimationFrame(autoScrollAnimation);
+    };
+
+    autoScrollAnimation();
+  };
+
+  const stopAutoScroll = () => {
+    isAutoScrolling = false;
+    if (idleTimeout) clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => {
+      // Reset the timer and restart auto-scroll
+      startAutoScrollTime = performance.now();
+      startAutoScroll();
+    }, idleTimeoutDelay);
+  };
+
+  const permanentlyStopAutoScroll = () => {
+    isAutoScrolling = false;
+    if (idleTimeout) clearTimeout(idleTimeout);
+  };
+
+  setTimeout(() => {
+    startAutoScroll();
+  }, 500);
+
+  // Detect user interaction to stop auto-scroll
+  const userScrollHandler = () => {
+    stopAutoScroll();
+    document.removeEventListener("wheel", userScrollHandler);
+    document.removeEventListener("touchstart", userScrollHandler);
+  };
+
+  window.addEventListener("wheel", userScrollHandler, { passive: false });
+  window.addEventListener("touchmove", userScrollHandler, { passive: false });
+
+  const portalScroll = ({ scroll }) => {
+    const portalElement = document.querySelector("#portal").parentElement;
+    const portalTop = portalElement.offsetTop;
+    const portalHeight = window.innerHeight;
+
+    const relativeScroll = scroll - portalTop;
+
+    // If we're within the portal section
+    if (relativeScroll >= 0 && relativeScroll <= portalHeight) {
+      const scrollFraction = relativeScroll / portalHeight;
+      const frameIndex = Math.min(
+        frameCount - 1,
+        Math.ceil(scrollFraction * frameCount)
+      );
+
+      requestAnimationFrame(() => updateImage(frameIndex + 1));
+    }
+  };
+
+  window.portalScrollIndex = lenisBind(portalScroll);
+  preloadImages();
+
+  gsap.set(".partners-h-content", { autoAlpha: 0 });
+  gsap.set(".skew", { autoAlpha: 0, scale: 0 });
+
+  ScrollTrigger.create({
+    trigger: "#portal",
+    start: "top top",
+    end: () => window.innerHeight * 1,
+    onLeave: () => {
+      permanentlyStopAutoScroll();
+
+      gsap
+        .timeline()
+        .to("#portal", { autoAlpha: 0, duration: 1 })
+        .to(
+          ".skew",
+          {
+            autoAlpha: 1,
+            scale: 1,
+            duration: 1,
+            onComplete: () => {
+              window.startHero();
+            },
+          },
+          "<"
+        );
+    },
+    pin: true,
+    pinSpacing: false,
+  });
 }
 
 function partnersHero() {
@@ -58,53 +177,124 @@ function partnersHero() {
 
   const skewContents = document.querySelectorAll(".skew-content");
 
-  skewContents.forEach((content) => {
-    content.addEventListener("mouseenter", () => {
-      skewContents.forEach((c) => {
-        if (c !== content) {
-          c.classList.add("cc-dimmed");
-        }
-      });
-    });
+  const skewCardsData = [];
+  const transformCardsData = [];
 
-    content.addEventListener("mouseleave", () => {
-      skewContents.forEach((c) => c.classList.remove("cc-dimmed"));
-    });
+  skewCards.forEach((card, i) => {
+    const style = window.getComputedStyle(card);
+    const tStyle = window.getComputedStyle(transformCards[i]);
+    skewCardsData.push(style.transform);
+    transformCardsData.push(tStyle.transform);
+
+    card.style.transform = "none";
+    transformCards[i].style.transform = "none";
   });
 
-  section.addEventListener("mousemove", (e) => {
-    const x = e.pageX;
-    const y = e.pageY;
-
-    let xPercent;
-    let yPercent;
-    xPercent = (2 * x - width) / width;
-    yPercent = (2 * y - height) / height;
-
+  const heroSplit = new SplitText(".partners-h-content .h1-web", {
+    type: "lines",
+  });
+  const spreadCards = () => {
     skewCards.forEach((card, i) => {
-      gsap.to(card, {
-        css: {
-          transform: `rotateY(${
-            transforms[i].y + xPercent * 16 // x- movement
-          }deg) translateZ(0px)`,
+      gsap
+        .timeline()
+        .to(card, {
+          css: { transform: skewCardsData[i] },
+          duration: 2,
+          ease: "Expo.easeOut",
+        })
+        .to(
+          transformCards[i],
+          {
+            css: { transform: transformCardsData[i] },
+            duration: 2,
+            ease: "Expo.easeOut",
+          },
+          "<"
+        );
+    });
+    gsap.set(".partners-h-content", { autoAlpha: 1 });
+    gsap
+      .timeline({
+        onComplete: () => {
+          startInteraction();
         },
-        ease: "Expo.easeOut",
-        duration: 2.5,
-        overwrite: "all",
+      })
+      .from(heroSplit.lines, {
+        y: 24,
+        rotate: 1,
+        autoAlpha: 0,
+        stagger: 0.2,
+        duration: 0.4,
+        delay: 1,
+        ease: "power2.out",
+      })
+      .from(".partenrs-h-cta > *", {
+        y: 24,
+        autoAlpha: 0,
+        stagger: 0.2,
+        ease: "power2.out",
+      });
+  };
+
+  window.startHero = () => {
+    spreadCards();
+    const section = document.querySelector('[data-section="portal"]');
+    lenisUnbind(window.portalScrollIndex);
+    window.pageWrapper.removeChild(section);
+    window.lenis.scrollTo(lenis.scroll - window.innerHeight, {
+      immediate: true,
+    });
+  };
+
+  const startInteraction = () => {
+    skewContents.forEach((content) => {
+      content.addEventListener("mouseenter", () => {
+        skewContents.forEach((c) => {
+          if (c !== content) {
+            c.classList.add("cc-dimmed");
+          }
+        });
       });
 
-      gsap.to(transformCards[i], {
-        css: {
-          transform: `rotateX(${
-            transforms[i].x + yPercent * -12
-          }deg) translateZ(0px)`,
-        },
-        ease: "Expo.easeOut",
-        duration: 2.5,
-        overwrite: "all",
+      content.addEventListener("mouseleave", () => {
+        skewContents.forEach((c) => c.classList.remove("cc-dimmed"));
       });
     });
-  });
+
+    section.addEventListener("mousemove", (e) => {
+      const x = e.pageX;
+      const y = e.pageY;
+
+      let xPercent;
+      let yPercent;
+      xPercent = (2 * x - width) / width;
+      yPercent = (2 * y - height) / height;
+
+      skewCards.forEach((card, i) => {
+        gsap.to(card, {
+          css: {
+            transform: `rotateY(${
+              transforms[i].y + xPercent * 16 // x- movement
+            }deg) translateZ(0px)`,
+          },
+          ease: "Expo.easeOut",
+          duration: 2.5,
+          overwrite: "all",
+        });
+
+        gsap.to(transformCards[i], {
+          css: {
+            transform: `rotateX(${
+              transforms[i].x + yPercent * -12
+            }deg) translateZ(0px)`,
+          },
+          ease: "Expo.easeOut",
+          duration: 2.5,
+          overwrite: "all",
+        });
+      });
+    });
+  };
 }
 
 function partnersTabs() {
@@ -182,6 +372,7 @@ function partnersTabs() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  partnersIntro();
   partnersHero();
   partnersTabs();
 });
