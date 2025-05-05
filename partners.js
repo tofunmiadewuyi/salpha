@@ -1,5 +1,5 @@
-// partners.js v.1.11.6
-function partnersIntro() {
+// partners.js v.1.11.6.0
+function partnersImgSeq() {
   const canvas = document.getElementById("portal");
   const context = canvas.getContext("2d");
 
@@ -199,7 +199,7 @@ function partnersHero() {
         .timeline()
         .to(card, {
           css: { transform: skewCardsData[i] },
-          duration: 2,
+          duration: 2 + i * 0.5,
           ease: "Expo.easeOut",
         })
         .to(
@@ -223,27 +223,22 @@ function partnersHero() {
         y: 24,
         rotate: 1,
         autoAlpha: 0,
-        stagger: 0.2,
-        duration: 0.4,
+        stagger: 0.1,
+        duration: 0.6,
         delay: 1,
         ease: "power2.out",
       })
       .from(".partenrs-h-cta > *", {
-        y: 24,
+        y: 12,
         autoAlpha: 0,
         stagger: 0.2,
+        duration: 0.4,
         ease: "power2.out",
       });
   };
 
   window.startHero = () => {
     spreadCards();
-    const section = document.querySelector('[data-section="portal"]');
-    lenisUnbind(window.portalScrollIndex);
-    window.pageWrapper.removeChild(section);
-    window.lenis.scrollTo(lenis.scroll - window.innerHeight, {
-      immediate: true,
-    });
   };
 
   const startInteraction = () => {
@@ -370,9 +365,107 @@ function partnersTabs() {
     });
   });
 }
+function partnersVideo() {
+  gsap.set(".partners-h-content", { autoAlpha: 0 });
+  gsap.set(".skew", { autoAlpha: 0, scale: 0 });
+  gsap.set(".skew-wrapper", { yPercent: -15 });
+
+  // what happens after thte portal animation is done, scrubbed or otherwise
+  const completePortal = () => {
+    window.lenis.scrollTo(0, {
+      immediate: true,
+    });
+    gsap
+      .timeline()
+      .to('[data-section="portal"]', { autoAlpha: 0, duration: 1 })
+      .to(".skew-wrapper", { yPercent: 0, duration: 3 }, "<")
+      .to(
+        ".skew",
+        {
+          autoAlpha: 1,
+          scale: 1,
+          duration: 1,
+          overwrite: true,
+          onComplete: () => {
+            window.startHero();
+          },
+        },
+        "<"
+      );
+
+    setTimeout(() => {
+      if (window.portalST) {
+        window.portalST.kill();
+      }
+    }, 500);
+  };
+
+  const video = document.querySelector("#portal-video");
+  let isScrolling = false;
+  let scrollTimeout;
+  let hasScrolled = false;
+  const SCROLL_TIMEOUT = 200;
+
+  video.addEventListener("loadedmetadata", function () {
+    video.playbackRate = 0.5;
+    scrollTimeout = setTimeout(function () {
+      isScrolling = false;
+      video.play();
+    }, SCROLL_TIMEOUT);
+  });
+
+  video.addEventListener("ended", function () {
+    completePortal();
+  });
+
+  const scrollFn = ({ scroll }) => {
+    hasScrolled = true;
+
+    if (!isScrolling) {
+      isScrolling = true;
+      video.pause();
+    }
+
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+    }
+
+    scrollTimeout = setTimeout(function () {
+      isScrolling = false;
+      video.play();
+    }, SCROLL_TIMEOUT);
+
+    const portalSection = document.querySelector('[data-section="portal"]');
+    const scrollPercentage = scroll / portalSection.offsetHeight;
+    const videoTime = video.duration * scrollPercentage;
+
+    if (!isNaN(videoTime)) {
+      video.currentTime = videoTime;
+    }
+  };
+  lenisBind(scrollFn);
+
+  window.portalST = ScrollTrigger.create({
+    trigger: '[data-section="portal"]',
+    start: "top top",
+    end: () => 0,
+    pinSpacing: true,
+    onUpdate: (self) => {
+      const progress = self.progress;
+      const internal = progress - 0.8;
+      if (internal >= 0) {
+        gsap.set(".skew", { autoAlpha: internal, scale: internal });
+      }
+    },
+    onLeave: () => {
+      completePortal();
+    },
+    scrub: true,
+  });
+}
 
 document.addEventListener("DOMContentLoaded", () => {
-  partnersIntro();
+  partnersVideo();
   partnersHero();
   partnersTabs();
 });
