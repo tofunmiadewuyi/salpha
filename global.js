@@ -132,7 +132,7 @@ function initNavigation() {
     navDropdowns.forEach((item) => {
       closeNavDropdown(item);
     });
-    nav.classList.remove("cc-active");
+    // nav.classList.remove("cc-active");
   });
 
   const menuSafezone = document.querySelector(".control-safezone.cc-menu");
